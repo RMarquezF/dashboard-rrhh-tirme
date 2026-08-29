@@ -1,0 +1,10 @@
+/* You can add global styles to this file, and also import other style files */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Estilos base del proyecto */
+body {
+  @apply bg-tirme-light text-slate-800 antialiased;
+  font-family: system-ui, -apple-system, sans-serif;
+}
