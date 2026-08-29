@@ -6,14 +6,14 @@ import { FiltrosService } from '../../services/filtros';
   selector: 'app-header-filtros',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './header-filtros.html',
-  styleUrl: './header-filtros.scss',
+  templateUrl: './header-filtros.component.html',
+  styleUrl: './header-filtros.scss'
 })
-export class HeaderFiltros {
-  // Inyectamos el servicio global de Signals
+export class HeaderFiltrosComponent {
+  // Inyectamos nuestro servicio con Signals
   public filtrosService = inject(FiltrosService);
 
-  // Métodos que capturan los cambios en los selects y actualizan el estado global
+  // Métodos para actualizar cada filtro individualmente al cambiar el select
   onAnioChange(event: any) {
     this.filtrosService.actualizarFiltros({ anio: Number(event.target.value) });
   }

@@ -1,0 +1,33 @@
+<aside class="w-64 bg-tirme-dark text-white flex flex-col h-screen shadow-lg">
+  <!-- Logo / Cabecera del Sidebar -->
+  <div class="p-5 border-b border-slate-700 flex items-center space-x-3">
+    <div class="bg-tirme-green text-white p-2 rounded-lg font-bold text-lg">
+      TR
+    </div>
+    <div>
+      <h1 class="font-bold text-lg tracking-wide">Tirme RRHH</h1>
+      <p class="text-xs text-slate-400">Cuadro de Mando</p>
+    </div>
+  </div>
+
+  <!-- Menú de navegación -->
+  <nav class="flex-1 p-4 space-y-1">
+    <a routerLink="/dashboard" routerLinkActive="bg-tirme-green text-white" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+      <span class="text-lg">📊</span>
+      <span class="font-medium">Resumen General</span>
+    </a>
+    <a routerLink="/personal" routerLinkActive="bg-tirme-green text-white" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+      <span class="text-lg">👥</span>
+      <span class="font-medium">Personal</span>
+    </a>
+    <a routerLink="/turnos" routerLinkActive="bg-tirme-green text-white" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+      <span class="text-lg">📅</span>
+      <span class="font-medium">Turnos y Horarios</span>
+    </a>
+  </nav>
+
+  <!-- Pie del Sidebar -->
+  <div class="p-4 border-t border-slate-700 text-xs text-slate-400 text-center">
+    Flask API Connected
+  </div>
+</aside>

@@ -1,12 +1,15 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { SidebarComponent } from './components/sidebar/sidebar';
+import { HeaderFiltros } from './components/header-filtros/header-filtros';
 
 @Component({
-  imports: [RouterOutlet],
   selector: 'app-root',
-  styleUrl: './app.scss',
+  standalone: true,
+  imports: [CommonModule, SidebarComponent, HeaderFiltros],
   templateUrl: './app.html',
+  styleUrl: './app.scss'
 })
-export class App {
-  protected readonly title = signal('frontend');
+export class AppComponent {
+  title = 'Dashboard RRHH';
 }
