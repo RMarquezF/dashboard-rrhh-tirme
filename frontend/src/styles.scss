@@ -1,10 +1,17 @@
-/* You can add global styles to this file, and also import other style files */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Estilos base del proyecto */
+:root {
+  --color-tirme-light: #f8fafc;
+  --color-tirme-dark: #1e293b;
+  --color-tirme-green: #10b981;
+}
+
 body {
-  @apply bg-tirme-light text-slate-800 antialiased;
-  font-family: system-ui, -apple-system, sans-serif;
+  @apply bg-slate-50 text-slate-800 antialiased;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
 }

@@ -1,0 +1,72 @@
+<div class="p-6 space-y-6">
+  <!-- Tarjeta de estado de filtros actuales -->
+  <div
+    class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+  >
+    <div>
+      <h3 class="text-base font-bold text-slate-800">Resumen General de Personal</h3>
+      <p class="text-xs text-slate-500">
+        Mostrando métricas basadas en la selección de la cabecera global.
+      </p>
+    </div>
+
+    <!-- Chips informativos con los valores actuales del Signal -->
+    <div class="flex flex-wrap items-center gap-2">
+      <span
+        class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200"
+      >
+        Año: <strong class="ml-1 text-slate-900">{{ filtrosService.filtros().anio }}</strong>
+      </span>
+      <span
+        class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200"
+      >
+        Dirección:
+        <strong class="ml-1 text-slate-900">{{
+          filtrosService.filtros().direccion || 'Todas'
+        }}</strong>
+      </span>
+      <span
+        class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200"
+      >
+        Grupo:
+        <strong class="ml-1 text-slate-900">{{ filtrosService.filtros().grupo || 'Todos' }}</strong>
+      </span>
+      <span
+        class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200"
+      >
+        Estado:
+        <strong class="ml-1 text-slate-900">{{
+          filtrosService.filtros().estado || 'Todos'
+        }}</strong>
+      </span>
+    </div>
+  </div>
+
+  <!-- Cuadrícula de tarjetas de métricas dinámicas -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+      <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Plantilla Total</p>
+      <h4 class="text-2xl font-bold text-slate-800 mt-1">{{ totalPlantilla() }}</h4>
+      <span class="text-xs text-emerald-600 font-medium mt-2 inline-block">+2 vs mes anterior</span>
+    </div>
+    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+      <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Activos en Planta</p>
+      <h4 class="text-2xl font-bold text-slate-800 mt-1">{{ activosPlanta() }}</h4>
+      <span class="text-xs text-slate-500 font-medium mt-2 inline-block"
+        >{{ porcentajeAsistencia() }}% de asistencia</span
+      >
+    </div>
+    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+      <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Bajas Médicas</p>
+      <h4 class="text-2xl font-bold text-slate-800 mt-1">{{ bajasMedicas() }}</h4>
+      <span class="text-xs text-amber-600 font-medium mt-2 inline-block">Control semanal</span>
+    </div>
+    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+      <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+        Vacaciones / Permisos
+      </p>
+      <h4 class="text-2xl font-bold text-slate-800 mt-1">{{ vacaciones() }}</h4>
+      <span class="text-xs text-blue-600 font-medium mt-2 inline-block">Programados</span>
+    </div>
+  </div>
+</div>

@@ -8,7 +8,7 @@ export interface FiltrosGlobales {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class FiltrosService {
   // Estado reactivo global con Signals
@@ -16,11 +16,11 @@ export class FiltrosService {
     anio: new Date().getFullYear(),
     direccion: 'TODAS',
     grupo: 'TODOS',
-    estado: 'TODOS'
+    estado: 'TODOS',
   });
 
   // Método para actualizar los filtros desde la barra superior
   public actualizarFiltros(nuevosFiltros: Partial<FiltrosGlobales>) {
-    this.filtros.update(actuales => ({ ...actuales, ...nuevosFiltros }));
+    this.filtros.update((actuales) => ({ ...actuales, ...nuevosFiltros }));
   }
 }
