@@ -1,0 +1,75 @@
+import { Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../services/auth.service';
+
+@Component({
+  selector: 'app-login',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './login.html'
+})
+export class Login {
+  private authService = inject(AuthService);
+
+  public email = '';
+  public password = '';
+  public selectedRole = 'empleado';
+  public availableRoles: string[] = ['empleado']; // Todos tienen empleado por defecto
+  
+  public step: 1 | 2 = 1; // 1: Pedir email, 2: Pedir contraseña y rol
+  public errorMessage = '';
+  public isLoading = false;
+
+  // Paso 1: Verificar el email y cargar los roles desde Flask
+  public onCheckEmail() {
+    if (!this.email) {
+      this.errorMessage = 'Por favor, introduce tu correo electrónico.';
+      return;
+    }
+
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    this.authService.obtenerRolesPorEmail(this.email).subscribe({
+      next: (response: any) => {
+        this.isLoading = false;
+        // response.roles contendrá un array como ['empleado', 'hr', 'vi']
+        this.availableRoles = response.roles && response.roles.length > 0 ? response.roles : ['empleado'];
+        this.selectedRole = 'empleado'; // Por defecto se selecciona empleado
+        this.step = 2; // Pasamos a la pantalla de contraseña y selector de rol
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.errorMessage = err.error?.message || 'Correo no encontrado en la base de datos.';
+      }
+    });
+  }
+
+  // Paso 2: Enviar credenciales completas con el rol elegido
+  public onLogin() {
+    if (!this.password) {
+      this.errorMessage = 'Por favor, introduce tu contraseña.';
+      return;
+    }
+
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    this.authService.login(this.email, this.password, this.selectedRole).subscribe({
+      next: () => {
+        this.isLoading = false;
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.errorMessage = err.error?.message || 'Contraseña incorrecta.';
+      }
+    });
+  }
+
+  public volverAEmail() {
+    this.step = 1;
+    this.password = '';
+    this.errorMessage = '';
+  }
+}

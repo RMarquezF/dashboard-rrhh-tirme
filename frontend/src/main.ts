@@ -3,5 +3,4 @@ import { appConfig } from './app/app.config';
 // Antes: import { AppComponent } from './app/app.component';
 import { AppComponent } from './app/app';
 
-bootstrapApplication(AppComponent, appConfig)
-  .catch((err) => console.error(err));
+bootstrapApplication(AppComponent, appConfig).catch((err) => console.error(err));

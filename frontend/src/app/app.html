@@ -1,13 +1,15 @@
 <div class="flex min-h-screen bg-slate-50">
-  <app-sidebar></app-sidebar>
+  <!-- Menú lateral fijo -->
+  <app-sidebar class="w-64 flex-shrink-0"></app-sidebar>
 
-  <main class="flex-1">
-    <div class="w-full">
-      <app-header-filtros></app-header-filtros>
-      <section class="p-8">
-        <h1 class="text-3xl font-bold text-slate-800">{{ title }}</h1>
-        <p class="mt-4 text-slate-600">Dashboard RRHH funcionando correctamente.</p>
-      </section>
+  <!-- Contenido principal a la derecha -->
+  <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    <!-- Cabecera global con los filtros -->
+    <app-header-filtros></app-header-filtros>
+
+    <!-- Zona central donde se cargarán las vistas de forma dinámica según la ruta -->
+    <div class="flex-1 overflow-y-auto bg-slate-50">
+      <router-outlet></router-outlet>
     </div>
   </main>
 </div>
