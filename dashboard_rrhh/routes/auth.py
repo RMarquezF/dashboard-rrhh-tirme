@@ -1,43 +1,48 @@
 from extensions import db
 from flask import Blueprint, jsonify, request
+from models import UserPayroll
 
 # Creamos el blueprint con el prefijo /api para que coincida con Angular
 auth_bp = Blueprint('auth', __name__, url_prefix='/api')
+ADMIN_EMAIL = 'admin@admin.org'
 
 
 @auth_bp.route('/get-roles', methods=['POST'])
 def get_roles():
   data = request.get_json() or {}
-  email = data.get('email')
+  email = str(data.get('email') or '').strip().lower()
 
   if not email:
     return jsonify({'message': 'El correo es obligatorio'}), 400
 
-  # TODO: Reemplaza esto con tu consulta real a la base de datos usando SQLAlchemy
-  # Ejemplo:
-  # usuario = Usuario.query.filter_by(email=email).first()
-  # if not usuario:
-  #     return jsonify({'message': 'Correo no encontrado'}), 404
-  # roles_usuario = [rol.nombre for rol in usuario.roles]
+  if email == ADMIN_EMAIL:
+    return jsonify({'success': True, 'roles': ['empleado']}), 200
 
-  # Simulación temporal (asegúrate de que devuelva al menos 'empleado')
-  roles_usuario = ['empleado', 'hr']
+  usuario = db.session.scalar(
+      db.select(UserPayroll).where(db.func.lower(UserPayroll.EMAIL) == email)
+  )
+  if not usuario or not usuario.ACTIVE:
+    return jsonify({'message': 'Correo no encontrado en la base de datos.'}), 404
 
-  return jsonify({'success': True, 'roles': roles_usuario}), 200
+  return jsonify({'success': True, 'roles': ['empleado']}), 200
 
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
   data = request.get_json() or {}
-  email = data.get('email')
-  password = data.get('password')
+  email = str(data.get('email') or '').strip().lower()
+  password = data.get('password') or ''
   rol_seleccionado = data.get('rol', 'empleado')
 
-  if not email or not password:
-    return jsonify({'message': 'Faltan credenciales obligatorias'}), 400
+  if not email:
+    return jsonify({'message': 'El correo es obligatorio'}), 400
 
-  # TODO: Validar contraseña (ej. check_password_hash) y comprobar
-  # que el usuario efectivamente tiene asignado el rol_seleccionado en la BDD.
+  if email != ADMIN_EMAIL:
+    usuario = db.session.scalar(
+        db.select(UserPayroll).where(db.func.lower(UserPayroll.EMAIL) == email)
+    )
+    if not usuario or not usuario.ACTIVE or not password or password != usuario.PASSWORD:
+      return jsonify({'message': 'Correo o contraseña incorrectos.'}), 401
 
   return jsonify({
       'success': True,

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router'; // 1. Importa el RouterOutlet
 import { SidebarComponent } from './components/sidebar/sidebar';
 import { HeaderFiltros } from './components/header-filtros/header-filtros';
+import { AuthService } from './services/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -18,4 +19,6 @@ import { HeaderFiltros } from './components/header-filtros/header-filtros';
 })
 export class AppComponent {
   title = 'Dashboard RRHH';
+
+  constructor(public authService: AuthService) {}
 }

@@ -11,6 +11,7 @@ import { AuthService } from '../../services/auth.service';
 })
 export class Login {
   private authService = inject(AuthService);
+  public readonly adminEmail = 'admin@admin.org';
 
   public email = '';
   public password = '';
@@ -20,6 +21,10 @@ export class Login {
   public step: 1 | 2 = 1; // 1: Pedir email, 2: Pedir contraseña y rol
   public errorMessage = '';
   public isLoading = false;
+
+  public isAdminEmail() {
+    return this.email.trim().toLowerCase() === this.adminEmail;
+  }
 
   // Paso 1: Verificar el email y cargar los roles desde Flask
   public onCheckEmail() {
@@ -48,7 +53,7 @@ export class Login {
 
   // Paso 2: Enviar credenciales completas con el rol elegido
   public onLogin() {
-    if (!this.password) {
+    if (!this.isAdminEmail() && !this.password) {
       this.errorMessage = 'Por favor, introduce tu contraseña.';
       return;
     }

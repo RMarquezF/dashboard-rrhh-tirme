@@ -1,15 +1,19 @@
-<div class="flex min-h-screen bg-slate-50">
-  <!-- Menú lateral fijo -->
-  <app-sidebar class="w-64 flex-shrink-0"></app-sidebar>
+@if (authService.isLogged()) {
+  <div class="flex min-h-screen bg-slate-50">
+    <!-- Menú lateral fijo -->
+    <app-sidebar class="w-64 flex-shrink-0"></app-sidebar>
 
-  <!-- Contenido principal a la derecha -->
-  <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
-    <!-- Cabecera global con los filtros -->
-    <app-header-filtros></app-header-filtros>
+    <!-- Contenido principal a la derecha -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <!-- Cabecera global con los filtros -->
+      <app-header-filtros></app-header-filtros>
 
-    <!-- Zona central donde se cargarán las vistas de forma dinámica según la ruta -->
-    <div class="flex-1 overflow-y-auto bg-slate-50">
-      <router-outlet></router-outlet>
-    </div>
-  </main>
-</div>
+      <!-- Zona central donde se cargarán las vistas de forma dinámica según la ruta -->
+      <div class="flex-1 overflow-y-auto bg-slate-50">
+        <router-outlet></router-outlet>
+      </div>
+    </main>
+  </div>
+} @else {
+  <router-outlet></router-outlet>
+}
