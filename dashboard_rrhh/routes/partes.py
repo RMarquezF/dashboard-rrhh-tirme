@@ -1,8 +1,11 @@
+import calendar
+from datetime import date
+
 from flask import Blueprint, jsonify, request
 from sqlalchemy import func
 
 from extensions import db
-from models import UserPayroll, ZParte
+from models import UserPayroll, ZParte, ZPeriodos
 from schemas.parte_schema import partes_schema
 
 partes_bp = Blueprint('partes', __name__, url_prefix='/api/partes')
@@ -16,6 +19,215 @@ def get_he_expressions():
     he_combo = ZParte.DLCO + ZParte.DFCO + ZParte.NLCO + ZParte.NFCO
     total_he = he_normales + he_compensar + he_busca + he_buscanp + he_combo
     return he_normales, he_compensar, he_busca, he_buscanp, he_combo, total_he
+
+
+@partes_bp.route('/he-por-periodo', methods=['GET'])
+def get_he_por_periodo():
+    anio = request.args.get('anio', '2026', type=str)
+    mes_desde = max(request.args.get('mes_desde', 1, type=int), 1)
+    mes_hasta = min(request.args.get('mes_hasta', 12, type=int), 12)
+    anio_natural = request.args.get('anio_natural', 'false').lower() in {'true', '1', 'si', 'yes'}
+    departamento = request.args.get('departamento', '').strip()
+    pernr = request.args.get('pernr', '').strip()
+    estado = request.args.get('estado', '').strip()
+    periodo_id = request.args.get('periodo_id', '').strip()
+
+    if mes_desde > mes_hasta:
+        return jsonify({'message': 'El periodo de meses no es válido.'}), 400
+
+    periodos = ZPeriodos.query.filter_by(EJERCICIO=anio).order_by(ZPeriodos.ID).all()
+    periodo_seleccionado = next((periodo for periodo in periodos if periodo.ID == periodo_id), None)
+    if periodo_id and not anio_natural and not periodo_seleccionado:
+        return jsonify({'message': 'El periodo seleccionado no existe para el ejercicio indicado.'}), 400
+
+    if periodo_seleccionado and not anio_natural:
+        meses = [periodo_seleccionado.ID]
+    else:
+        meses = [f'{mes:02d}' for mes in range(mes_desde, mes_hasta + 1)]
+    norm, comp, busca, buscanp, combo, total = get_he_expressions()
+    if anio_natural:
+        fecha_desde = date(int(anio), mes_desde, 1)
+        ultimo_dia = calendar.monthrange(int(anio), mes_hasta)[1]
+        fecha_hasta = date(int(anio), mes_hasta, ultimo_dia)
+        filtros_periodo = [ZParte.PADAT.between(fecha_desde, fecha_hasta)]
+        mes_consulta = func.month(ZParte.PADAT)
+    else:
+        ejercicio_periodo = periodo_seleccionado.EJERCICIO if periodo_seleccionado else anio
+        filtros_periodo = [ZParte.EJERC == ejercicio_periodo, ZParte.MES.in_(meses)]
+        mes_consulta = ZParte.MES
+
+    if departamento:
+        filtros_periodo.append(ZParte.DPTO == departamento)
+    if pernr:
+        filtros_periodo.append(ZParte.PERNR == pernr)
+    if estado:
+        filtros_periodo.append(ZParte.STAT == estado)
+
+    mensual_query = db.session.query(
+        mes_consulta.label('mes'),
+        func.coalesce(func.sum(norm), 0).label('normales'),
+        func.coalesce(func.sum(comp), 0).label('compensar'),
+        func.coalesce(func.sum(busca), 0).label('busca'),
+        func.coalesce(func.sum(buscanp), 0).label('buscanp'),
+        func.coalesce(func.sum(combo), 0).label('combo'),
+        func.coalesce(func.sum(total), 0).label('total'),
+    ).filter(*filtros_periodo).group_by(mes_consulta).all()
+
+    mensual_por_mes = {str(row.mes).zfill(2): row._asdict() for row in mensual_query}
+    mensual = [
+        mensual_por_mes.get(
+            mes,
+            {
+                'mes': mes,
+                'normales': 0,
+                'compensar': 0,
+                'busca': 0,
+                'buscanp': 0,
+                'combo': 0,
+                'total': 0,
+            },
+        )
+        for mes in meses
+    ]
+
+    departamentos = db.session.query(
+        ZParte.DPTO.label('departamento'),
+        func.coalesce(func.sum(norm), 0).label('normales'),
+        func.coalesce(func.sum(comp), 0).label('compensar'),
+        func.coalesce(func.sum(busca), 0).label('busca'),
+        func.coalesce(func.sum(buscanp), 0).label('buscanp'),
+        func.coalesce(func.sum(combo), 0).label('combo'),
+        func.coalesce(func.sum(total), 0).label('total'),
+    ).filter(*filtros_periodo).group_by(ZParte.DPTO).order_by(func.sum(total).desc()).all()
+
+    trabajadores = db.session.query(
+        UserPayroll.NAME.label('nombre'),
+        UserPayroll.SURNAME.label('apellidos'),
+        ZParte.PERNR.label('id'),
+        ZParte.DPTO.label('departamento'),
+        func.coalesce(func.sum(norm), 0).label('normales'),
+        func.coalesce(func.sum(comp), 0).label('compensar'),
+        func.coalesce(func.sum(busca), 0).label('busca'),
+        func.coalesce(func.sum(buscanp), 0).label('buscanp'),
+        func.coalesce(func.sum(combo), 0).label('combo'),
+        func.coalesce(func.sum(total), 0).label('total'),
+    ).outerjoin(UserPayroll, ZParte.PERNR == UserPayroll.NUMPER) \
+     .filter(*filtros_periodo) \
+     .group_by(ZParte.PERNR, UserPayroll.NAME, UserPayroll.SURNAME, ZParte.DPTO) \
+     .order_by(func.sum(total).desc()).limit(20).all()
+
+    return jsonify({
+        'anio': anio,
+        'anio_natural': anio_natural,
+        'periodo_id': periodo_id,
+        'mes_desde': mes_desde,
+        'mes_hasta': mes_hasta,
+        'periodos': [
+            {
+                'id': periodo.ID,
+                'ejercicio': periodo.EJERCICIO,
+                'descripcion': periodo.DESCRIPTION or f'Periodo {periodo.ID}',
+                'fecha_inicio': periodo.FECHAINI.isoformat() if periodo.FECHAINI else None,
+                'fecha_fin': periodo.FECHAFIN.isoformat() if periodo.FECHAFIN else None,
+            }
+            for periodo in periodos
+        ],
+        'mensual': mensual,
+        'departamentos': [row._asdict() for row in departamentos],
+        'trabajadores': [row._asdict() for row in trabajadores],
+    }), 200
+
+
+@partes_bp.route('/he-por-empleado', methods=['GET'])
+def get_he_por_empleado():
+    anio = request.args.get('anio', '2026', type=str)
+    mes_desde = max(request.args.get('mes_desde', 1, type=int), 1)
+    mes_hasta = min(request.args.get('mes_hasta', 12, type=int), 12)
+    anio_natural = request.args.get('anio_natural', 'false').lower() in {'true', '1', 'si', 'yes'}
+    departamento = request.args.get('departamento', '').strip()
+    pernr = request.args.get('pernr', '').strip()
+    estado = request.args.get('estado', '').strip()
+    periodo_id = request.args.get('periodo_id', '').strip()
+    orden = request.args.get('orden', 'horas').lower()
+
+    if mes_desde > mes_hasta:
+        return jsonify({'message': 'El periodo de meses no es válido.'}), 400
+
+    periodos = ZPeriodos.query.filter_by(EJERCICIO=anio).order_by(ZPeriodos.ID).all()
+    periodo_seleccionado = next((periodo for periodo in periodos if periodo.ID == periodo_id), None)
+    if periodo_id and not anio_natural and not periodo_seleccionado:
+        return jsonify({'message': 'El periodo seleccionado no existe para el ejercicio indicado.'}), 400
+
+    if anio_natural:
+        fecha_desde = date(int(anio), mes_desde, 1)
+        fecha_hasta = date(int(anio), mes_hasta, calendar.monthrange(int(anio), mes_hasta)[1])
+        filtros = [ZParte.PADAT.between(fecha_desde, fecha_hasta)]
+    elif periodo_seleccionado:
+        filtros = [ZParte.EJERC == periodo_seleccionado.EJERCICIO, ZParte.MES == periodo_seleccionado.ID]
+    else:
+        filtros = [ZParte.EJERC == anio, ZParte.MES.in_([f'{mes:02d}' for mes in range(mes_desde, mes_hasta + 1)])]
+
+    if departamento:
+        filtros.append(ZParte.DPTO == departamento)
+    if pernr:
+        filtros.append(ZParte.PERNR == pernr)
+    if estado:
+        filtros.append(ZParte.STAT == estado)
+
+    _, _, _, _, _, total_he = get_he_expressions()
+    horas = func.coalesce(func.sum(total_he), 0)
+    query = db.session.query(
+        ZParte.PERNR.label('pernr'),
+        UserPayroll.NAME.label('nombre'),
+        UserPayroll.SURNAME.label('apellidos'),
+        func.coalesce(func.sum(total_he), 0).label('horas_extra'),
+    ).outerjoin(UserPayroll, ZParte.PERNR == UserPayroll.NUMPER) \
+     .filter(*filtros) \
+     .group_by(ZParte.PERNR, UserPayroll.NAME, UserPayroll.SURNAME)
+
+    if orden == 'pernr':
+        query = query.order_by(ZParte.PERNR.asc())
+    else:
+        query = query.order_by(horas.desc(), ZParte.PERNR.asc())
+
+    empleados = query.all()
+    total = sum(int(row.horas_extra or 0) for row in empleados)
+    departamentos = [
+        row[0]
+        for row in db.session.query(ZParte.DPTO)
+        .filter(*filtros)
+        .filter(ZParte.DPTO.isnot(None))
+        .distinct()
+        .order_by(ZParte.DPTO.asc())
+        .all()
+    ]
+
+    return jsonify({
+        'anio': anio,
+        'periodo_id': periodo_id,
+        'orden': 'pernr' if orden == 'pernr' else 'horas',
+        'empleados': [
+            {
+                'pernr': row.pernr,
+                'nombre': row.nombre,
+                'apellidos': row.apellidos,
+                'horas_extra': int(row.horas_extra or 0),
+            }
+            for row in empleados
+        ],
+        'departamentos': departamentos,
+        'total': total,
+        'periodos': [
+            {
+                'id': periodo.ID,
+                'ejercicio': periodo.EJERCICIO,
+                'descripcion': periodo.DESCRIPTION or f'Periodo {periodo.ID}',
+                'fecha_inicio': periodo.FECHAINI.isoformat() if periodo.FECHAINI else None,
+                'fecha_fin': periodo.FECHAFIN.isoformat() if periodo.FECHAFIN else None,
+            }
+            for periodo in periodos
+        ],
+    }), 200
 
 # ---------------------------------------------------------
 # ENDPOINTS EXISTENTES
@@ -104,39 +316,84 @@ def get_he_comite():
 @partes_bp.route('/ranking-combo', methods=['GET'])
 def get_ranking_combo():
     anio = request.args.get('anio', '2026', type=str)
-    _, comp, _, _, combo, total = get_he_expressions()
+    mes_desde = max(request.args.get('mes_desde', 1, type=int), 1)
+    mes_hasta = min(request.args.get('mes_hasta', 12, type=int), 12)
+    anio_natural = request.args.get('anio_natural', 'false').lower() in {'true', '1', 'si', 'yes'}
+    departamento = request.args.get('departamento', '').strip()
+    pernr = request.args.get('pernr', '').strip()
+    estado = request.args.get('estado', '').strip()
+    periodo_id = request.args.get('periodo_id', '').strip()
 
-    sabados = db.session.query(
-        UserPayroll.NAME.label('trabajador'),
-        ZParte.PERNR.label('id'),
-        func.coalesce(func.sum(combo), 0).label('total_horas')
-    ).outerjoin(UserPayroll, ZParte.PERNR == UserPayroll.NUMPER)\
-     .filter(ZParte.EJERC == anio)\
-     .group_by(ZParte.PERNR, UserPayroll.NAME)\
-     .order_by(func.sum(combo).desc()).limit(15).all()
+    if mes_desde > mes_hasta:
+        return jsonify({'message': 'El periodo de meses no es válido.'}), 400
 
-    total_he_rank = db.session.query(
-        UserPayroll.NAME.label('trabajador'),
-        ZParte.PERNR.label('id'),
-        func.coalesce(func.sum(total), 0).label('total')
-    ).outerjoin(UserPayroll, ZParte.PERNR == UserPayroll.NUMPER)\
-     .filter(ZParte.EJERC == anio)\
-     .group_by(ZParte.PERNR, UserPayroll.NAME)\
-     .order_by(func.sum(total).desc()).limit(15).all()
+    periodos = ZPeriodos.query.filter_by(EJERCICIO=anio).order_by(ZPeriodos.ID).all()
+    periodo_seleccionado = next((periodo for periodo in periodos if periodo.ID == periodo_id), None)
+    if periodo_id and not anio_natural and not periodo_seleccionado:
+        return jsonify({'message': 'El periodo seleccionado no existe para el ejercicio indicado.'}), 400
 
-    ranking_compensar = db.session.query(
-        UserPayroll.NAME.label('trabajador'),
-        ZParte.PERNR.label('id'),
-        func.coalesce(func.sum(comp), 0).label('hecomp')
-    ).outerjoin(UserPayroll, ZParte.PERNR == UserPayroll.NUMPER)\
-     .filter(ZParte.EJERC == anio)\
-     .group_by(ZParte.PERNR, UserPayroll.NAME)\
-     .order_by(func.sum(comp).desc()).limit(15).all()
+    if anio_natural:
+        filtros = [ZParte.PADAT.between(
+            date(int(anio), mes_desde, 1),
+            date(int(anio), mes_hasta, calendar.monthrange(int(anio), mes_hasta)[1]),
+        )]
+    elif periodo_seleccionado:
+        filtros = [ZParte.EJERC == periodo_seleccionado.EJERCICIO, ZParte.MES == periodo_seleccionado.ID]
+    else:
+        filtros = [ZParte.EJERC == anio, ZParte.MES.in_([f'{mes:02d}' for mes in range(mes_desde, mes_hasta + 1)])]
+
+    if departamento:
+        filtros.append(ZParte.DPTO == departamento)
+    if pernr:
+        filtros.append(ZParte.PERNR == pernr)
+    if estado:
+        filtros.append(ZParte.STAT == estado)
+
+    def suma(*nombres):
+        return sum(getattr(ZParte, nombre) for nombre in nombres)
+
+    combo_programadas = suma('DLCOP', 'DFCOP', 'NLCOP', 'NFCOP')
+    total_he = suma(
+        'DL', 'DF', 'NL', 'NF', 'DLB', 'DFB', 'NLB', 'NFB',
+        'DLF', 'DFF', 'NLF', 'NFF', 'DLC', 'DFC', 'NLC', 'NFC',
+        'DLCO', 'DFCO', 'NLCO', 'NFCO', 'DLBN', 'DFBN', 'NLBN', 'NFBN',
+        'DLCOP', 'DFCOP', 'NLCOP', 'NFCOP',
+    )
+    compensables = suma('DLCO', 'DFCO', 'NLCO', 'NFCO', 'DLCOP', 'DFCOP', 'NLCOP', 'NFCOP')
+
+    query = db.session.query(
+        ZParte.PERNR.label('pernr'), UserPayroll.NAME.label('nombre'), UserPayroll.SURNAME.label('apellidos'),
+        func.coalesce(func.sum(combo_programadas), 0).label('combo_programadas'),
+        func.coalesce(func.sum(total_he), 0).label('total_he'),
+        func.coalesce(func.sum(compensables), 0).label('he_compensables'),
+        func.coalesce(func.sum(compensables) * 1.75, 0).label('he_compensables_convertidas'),
+    ).outerjoin(UserPayroll, ZParte.PERNR == UserPayroll.NUMPER).filter(*filtros) \
+     .group_by(ZParte.PERNR, UserPayroll.NAME, UserPayroll.SURNAME) \
+     .order_by(func.sum(total_he).desc(), ZParte.PERNR.asc()).all()
+
+    filas = [{
+        'pernr': row.pernr, 'nombre': row.nombre, 'apellidos': row.apellidos,
+        'combo_programadas': float(row.combo_programadas or 0),
+        'total_he': float(row.total_he or 0),
+        'he_compensables': float(row.he_compensables or 0),
+        'he_compensables_convertidas': float(row.he_compensables_convertidas or 0),
+    } for row in query]
+    departamentos = [row[0] for row in db.session.query(ZParte.DPTO).filter(*filtros).filter(ZParte.DPTO.isnot(None)).distinct().order_by(ZParte.DPTO).all()]
 
     return jsonify({
-        "sabados_programados": [row._asdict() for row in sabados],
-        "ranking_total_he": [row._asdict() for row in total_he_rank],
-        "ranking_he_compensar": [row._asdict() for row in ranking_compensar]
+        'anio': anio, 'periodo_id': periodo_id, 'filas': filas,
+        'departamentos': departamentos,
+        'totales': {
+            'combo_programadas': sum(f['combo_programadas'] for f in filas),
+            'total_he': sum(f['total_he'] for f in filas),
+            'he_compensables': sum(f['he_compensables'] for f in filas),
+            'he_compensables_convertidas': sum(f['he_compensables_convertidas'] for f in filas),
+        },
+        'periodos': [{
+            'id': p.ID, 'ejercicio': p.EJERCICIO, 'descripcion': p.DESCRIPTION or f'Periodo {p.ID}',
+            'fecha_inicio': p.FECHAINI.isoformat() if p.FECHAINI else None,
+            'fecha_fin': p.FECHAFIN.isoformat() if p.FECHAFIN else None,
+        } for p in periodos],
     }), 200
 # ---------------------------------------------------------
 # PANTALLAS ADICIONALES: SPs, BUSCAS Y TOP 10

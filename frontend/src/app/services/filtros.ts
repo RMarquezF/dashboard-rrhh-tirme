@@ -5,6 +5,8 @@ export interface FiltrosGlobales {
   direccion: string;
   grupo: string;
   estado: string;
+  fechaDesde: string;
+  fechaHasta: string;
 }
 
 @Injectable({
@@ -17,6 +19,8 @@ export class FiltrosService {
     direccion: 'TODAS',
     grupo: 'TODOS',
     estado: 'TODOS',
+    fechaDesde: `${new Date().getFullYear()}-01-01`,
+    fechaHasta: new Date().toISOString().slice(0, 10),
   });
 
   // Método para actualizar los filtros desde la barra superior

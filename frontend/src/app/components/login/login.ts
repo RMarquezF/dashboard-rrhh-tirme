@@ -42,7 +42,12 @@ export class Login {
         // response.roles contendrá un array como ['empleado', 'hr', 'vi']
         this.availableRoles = response.roles && response.roles.length > 0 ? response.roles : ['empleado'];
         this.selectedRole = 'empleado'; // Por defecto se selecciona empleado
-        this.step = 2; // Pasamos a la pantalla de contraseña y selector de rol
+
+        if (this.isAdminEmail() || this.availableRoles.length === 1) {
+          this.onLogin();
+        } else {
+          this.step = 2; // Elegimos el rol antes de validar el login
+        }
       },
       error: (err) => {
         this.isLoading = false;

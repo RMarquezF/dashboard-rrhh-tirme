@@ -1,33 +1,17 @@
 <header
-  class="bg-white border-b border-slate-200 px-6 py-4 flex flex-col lg:flex-row items-center justify-between shadow-sm gap-4"
+  class="bg-[#0d2f38] border-b border-[#1c4a52] px-6 py-4 flex flex-col lg:flex-row items-center justify-between shadow-[0_2px_12px_rgba(0,0,0,0.18)] gap-4"
 >
-  <!-- Título de la sección o bienvenida -->
-  <div>
-    <h2 class="text-xl font-bold text-slate-800 tracking-tight">Panel de Control RRHH</h2>
-    <p class="text-xs text-slate-500">Filtros globales aplicados a todo el cuadro de mando</p>
+  <div class="flex-1 min-w-0">
+    <h2 class="text-[1.7rem] font-black tracking-[-0.03em] text-white leading-tight">Reporte Gestión RRHH</h2>
+    <p class="text-[11px] text-[#b6dbd9] uppercase tracking-[0.12em] font-semibold mt-1">Filtros globales del cuadro de mando</p>
   </div>
 
-  <!-- Controles de Filtros Globales -->
-  <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end">
-    <!-- Filtro de Año -->
+  <div class="flex flex-wrap items-end gap-3 w-full lg:w-auto justify-end">
     <div class="flex flex-col">
-      <label class="text-[11px] font-semibold text-slate-600 mb-1">Año</label>
-      <select
-        (change)="onAnioChange($event)"
-        class="bg-slate-50 border border-slate-300 text-slate-700 text-xs rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block px-3 py-2"
-      >
-        <option [value]="2026">2026</option>
-        <option [value]="2025">2025</option>
-        <option [value]="2024">2024</option>
-      </select>
-    </div>
-
-    <!-- Filtro de Dirección -->
-    <div class="flex flex-col">
-      <label class="text-[11px] font-semibold text-slate-600 mb-1">Dirección</label>
+      <label class="text-[10px] font-bold text-[#cfe4e6] uppercase tracking-[0.12em] mb-1">Dirección</label>
       <select
         (change)="onDireccionChange($event)"
-        class="bg-slate-50 border border-slate-300 text-slate-700 text-xs rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block px-3 py-2"
+        class="bg-[#123b43] border border-[#2d5d66] text-white text-xs rounded-lg focus:ring-[#2ec4b6] focus:border-[#2ec4b6] block px-3 py-2 min-w-[170px] shadow-sm"
       >
         <option value="">Todas las Direcciones</option>
         <option value="Operaciones">Operaciones</option>
@@ -36,12 +20,11 @@
       </select>
     </div>
 
-    <!-- Filtro de Grupo -->
     <div class="flex flex-col">
-      <label class="text-[11px] font-semibold text-slate-600 mb-1">Grupo</label>
+      <label class="text-[10px] font-bold text-[#cfe4e6] uppercase tracking-[0.12em] mb-1">Grupo Partes</label>
       <select
         (change)="onGrupoChange($event)"
-        class="bg-slate-50 border border-slate-300 text-slate-700 text-xs rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block px-3 py-2"
+        class="bg-[#123b43] border border-[#2d5d66] text-white text-xs rounded-lg focus:ring-[#2ec4b6] focus:border-[#2ec4b6] block px-3 py-2 min-w-[170px] shadow-sm"
       >
         <option value="">Todos los Grupos</option>
         <option value="Turno A">Turno A</option>
@@ -50,18 +33,24 @@
       </select>
     </div>
 
-    <!-- Filtro de Estado -->
     <div class="flex flex-col">
-      <label class="text-[11px] font-semibold text-slate-600 mb-1">Estado</label>
-      <select
-        (change)="onEstadoChange($event)"
-        class="bg-slate-50 border border-slate-300 text-slate-700 text-xs rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block px-3 py-2"
+      <label class="text-[10px] font-bold text-[#cfe4e6] uppercase tracking-[0.12em] mb-1">Desde</label>
+      <input
+        type="date"
+        [ngModel]="filtrosService.filtros().fechaDesde"
+        (ngModelChange)="onFechaChange('fechaDesde', $event)"
+        class="bg-[#123b43] border border-[#2d5d66] text-white text-xs rounded-lg focus:ring-[#2ec4b6] focus:border-[#2ec4b6] block px-3 py-2 min-w-[150px] shadow-sm"
       >
-        <option value="">Todos los Estados</option>
-        <option value="Activo">Activo</option>
-        <option value="De baja">De baja</option>
-        <option value="Vacaciones">Vacaciones</option>
-      </select>
+    </div>
+
+    <div class="flex flex-col">
+      <label class="text-[10px] font-bold text-[#cfe4e6] uppercase tracking-[0.12em] mb-1">Hasta</label>
+      <input
+        type="date"
+        [ngModel]="filtrosService.filtros().fechaHasta"
+        (ngModelChange)="onFechaChange('fechaHasta', $event)"
+        class="bg-[#123b43] border border-[#2d5d66] text-white text-xs rounded-lg focus:ring-[#2ec4b6] focus:border-[#2ec4b6] block px-3 py-2 min-w-[150px] shadow-sm"
+      >
     </div>
   </div>
 </header>
