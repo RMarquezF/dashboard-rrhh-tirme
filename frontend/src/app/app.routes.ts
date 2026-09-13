@@ -5,6 +5,8 @@ import { Login } from './components/login/login';
 import { ResumenGeneral } from './components/resumen-general/resumen-general';
 import { Personas } from './components/personas/personas';
 import { Turnos } from './components/turnos/turnos';
+import { HorasExtra } from './components/horas-extra/horas-extra';
+import { HorasExtraEmpleados } from './components/horas-extra-empleados/horas-extra-empleados';
 
 const authGuard = () => {
   const authService = inject(AuthService);
@@ -22,5 +24,7 @@ export const routes: Routes = [
   { path: 'resumen-general', component: ResumenGeneral, canActivate: [authGuard] },
   { path: 'personal', component: Personas, canActivate: [authGuard] },
   { path: 'turnos', component: Turnos, canActivate: [authGuard] },
+  { path: 'horas-extra', component: HorasExtra, canActivate: [authGuard] },
+  { path: 'horas-extra-empleados', component: HorasExtraEmpleados, canActivate: [authGuard] },
   { path: '**', redirectTo: 'login' }
 ];

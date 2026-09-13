@@ -1,6 +1,7 @@
 from config import Config
 from extensions import db, ma
 from flask import Flask, jsonify
+from flask_cors import CORS
 from flask_restx import Api
 
 # Importar Blueprints y Namespaces
@@ -10,6 +11,12 @@ from routes.auth_v2 import auth_ns
 
 app = Flask(__name__)
 app.config.from_object(Config)
+CORS(
+    app,
+    resources={r'/api/*': {
+        'origins': ['http://localhost:4200', 'http://127.0.0.1:4200'],
+    }},
+)
 
 # Inicializar extensiones
 db.init_app(app)

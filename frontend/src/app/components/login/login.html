@@ -18,8 +18,16 @@
 
     <!-- Mensaje de error -->
     @if (errorMessage) {
-      <div class="p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-red-600 font-medium text-center">
-        {{ errorMessage }}
+      <div
+        role="alert"
+        aria-live="polite"
+        class="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-left shadow-sm"
+      >
+        <span class="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-rose-100 text-sm font-bold text-rose-600">!</span>
+        <div class="min-w-0">
+          <p class="text-sm font-semibold text-rose-800">No hemos podido continuar</p>
+          <p class="mt-1 text-xs leading-5 text-rose-700">{{ errorMessage }}</p>
+        </div>
       </div>
     }
 
@@ -34,8 +42,27 @@
             name="email"
             required
             placeholder="usuario@tirme.com"
+            [class.border-rose-400]="errorMessage"
+            [class.bg-rose-50]="errorMessage"
             class="w-full px-4 py-2.5 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-600 focus:outline-none transition-all"
           />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Contraseña</label>
+          <input
+            type="password"
+            [(ngModel)]="password"
+            name="password"
+            [required]="!isAdminEmail()"
+            placeholder="••••••••"
+            [class.border-rose-400]="errorMessage"
+            [class.bg-rose-50]="errorMessage"
+            class="w-full px-4 py-2.5 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-600 focus:outline-none transition-all"
+          />
+          @if (isAdminEmail()) {
+            <p class="mt-1 text-[11px] text-slate-400">Este usuario puede acceder sin contraseña.</p>
+          }
         </div>
 
         <button 
