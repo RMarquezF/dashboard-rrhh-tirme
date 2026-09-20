@@ -2,7 +2,7 @@ import calendar
 from datetime import date
 
 from flask import Blueprint, jsonify, request
-from sqlalchemy import func
+from sqlalchemy import extract, func
 
 from extensions import db
 from models import UserPayroll, ZParte, ZPeriodos
@@ -114,7 +114,7 @@ def get_he_por_periodo():
     ).outerjoin(UserPayroll, ZParte.PERNR == UserPayroll.NUMPER) \
      .filter(*filtros_periodo) \
      .group_by(ZParte.PERNR, UserPayroll.NAME, UserPayroll.SURNAME, ZParte.DPTO) \
-     .order_by(func.sum(total).desc()).limit(20).all()
+     .order_by(func.sum(total).desc()).all()
 
     return jsonify({
         'anio': anio,
@@ -350,7 +350,11 @@ def get_ranking_combo():
         filtros.append(ZParte.STAT == estado)
 
     def suma(*nombres):
-        return sum(getattr(ZParte, nombre) for nombre in nombres)
+        cols = [getattr(ZParte, nombre) for nombre in nombres]
+        res = cols[0]
+        for c in cols[1:]:
+            res = res + c
+        return res
 
     combo_programadas = suma('DLCOP', 'DFCOP', 'NLCOP', 'NFCOP')
     total_he = suma(
@@ -359,14 +363,19 @@ def get_ranking_combo():
         'DLCO', 'DFCO', 'NLCO', 'NFCO', 'DLBN', 'DFBN', 'NLBN', 'NFBN',
         'DLCOP', 'DFCOP', 'NLCOP', 'NFCOP',
     )
-    compensables = suma('DLCO', 'DFCO', 'NLCO', 'NFCO', 'DLCOP', 'DFCOP', 'NLCOP', 'NFCOP')
+    comp_dl = ZParte.DL
+    comp_df = ZParte.DF
+    comp_nl = ZParte.NL
+    comp_nf = ZParte.NF
+    compensables = comp_dl + comp_df + comp_nl + comp_nf
+    compensables_convertidas = (comp_dl * 1.6) + (comp_df * 2.0) + (comp_nl * 2.0) + (comp_nf * 2.5)
 
     query = db.session.query(
         ZParte.PERNR.label('pernr'), UserPayroll.NAME.label('nombre'), UserPayroll.SURNAME.label('apellidos'),
         func.coalesce(func.sum(combo_programadas), 0).label('combo_programadas'),
         func.coalesce(func.sum(total_he), 0).label('total_he'),
         func.coalesce(func.sum(compensables), 0).label('he_compensables'),
-        func.coalesce(func.sum(compensables) * 1.75, 0).label('he_compensables_convertidas'),
+        func.coalesce(func.sum(compensables_convertidas), 0).label('he_compensables_convertidas'),
     ).outerjoin(UserPayroll, ZParte.PERNR == UserPayroll.NUMPER).filter(*filtros) \
      .group_by(ZParte.PERNR, UserPayroll.NAME, UserPayroll.SURNAME) \
      .order_by(func.sum(total_he).desc(), ZParte.PERNR.asc()).all()
@@ -376,7 +385,7 @@ def get_ranking_combo():
         'combo_programadas': float(row.combo_programadas or 0),
         'total_he': float(row.total_he or 0),
         'he_compensables': float(row.he_compensables or 0),
-        'he_compensables_convertidas': float(row.he_compensables_convertidas or 0),
+        'he_compensables_convertidas': round(float(row.he_compensables_convertidas or 0), 2),
     } for row in query]
     departamentos = [row[0] for row in db.session.query(ZParte.DPTO).filter(*filtros).filter(ZParte.DPTO.isnot(None)).distinct().order_by(ZParte.DPTO).all()]
 
@@ -387,7 +396,7 @@ def get_ranking_combo():
             'combo_programadas': sum(f['combo_programadas'] for f in filas),
             'total_he': sum(f['total_he'] for f in filas),
             'he_compensables': sum(f['he_compensables'] for f in filas),
-            'he_compensables_convertidas': sum(f['he_compensables_convertidas'] for f in filas),
+            'he_compensables_convertidas': round(sum(f['he_compensables_convertidas'] for f in filas), 2),
         },
         'periodos': [{
             'id': p.ID, 'ejercicio': p.EJERCICIO, 'descripcion': p.DESCRIPTION or f'Periodo {p.ID}',

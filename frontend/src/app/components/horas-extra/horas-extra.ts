@@ -38,7 +38,12 @@ export class HorasExtra implements OnInit, OnDestroy {
   public isLoading = false;
   public errorMessage = '';
   public readonly meses = Array.from({ length: 12 }, (_, index) => index + 1);
-  public readonly coloresDepartamentos = ['#1f8a8a', '#2a9d91', '#f4b942', '#ef8a5a', '#0f4c5c', '#7aa8b7'];
+  public readonly coloresDepartamentos = [
+    '#0f4c5c', '#e76f51', '#2a9d8f', '#f4a261',
+    '#264653', '#e9c46a', '#6a994e', '#bc4749',
+    '#457b9d', '#8d5a97', '#d1495b', '#00798c',
+    '#edae49', '#30638e', '#758e4f', '#9c6644',
+  ];
   private readonly destroy$ = new Subject<void>();
   private solicitudResumen?: Subscription;
 
@@ -171,7 +176,7 @@ export class HorasExtra implements OnInit, OnDestroy {
   }
 
   public trabajadoresSobreSetenta() {
-    return this.trabajadores.filter((trabajador) => Number(trabajador.total) > 70).length;
+    return this.trabajadores.filter((trabajador) => Number(trabajador.normales) > 70).length;
   }
 
   public departamentoPrincipal() {
@@ -184,6 +189,10 @@ export class HorasExtra implements OnInit, OnDestroy {
 
   public maxDepartamento() {
     return Math.max(...this.departamentos.map((item) => Number(item.total || 0)), 1);
+  }
+
+  public totalDepartamentos() {
+    return Math.max(this.departamentos.reduce((total, item) => total + this.normalizarNumero(item.total), 0), 1);
   }
 
   public porcentaje(valor: number, maximo: number) {
@@ -209,20 +218,20 @@ export class HorasExtra implements OnInit, OnDestroy {
   }
 
   public topTrabajadores() {
-    return [...this.trabajadores].sort((a, b) => this.normalizarNumero(b.total) - this.normalizarNumero(a.total)).slice(0, 10);
+    return [...this.trabajadores].sort((a, b) => this.normalizarNumero(b.normales) - this.normalizarNumero(a.normales));
   }
 
-  public segmentoCirculo(valor: number, maximo: number, indice: number, total: number) {
+  public segmentoCirculo(valor: number, total: number) {
     const circumference = 2 * Math.PI * 72;
-    const percent = total > 0 ? (this.normalizarNumero(valor) / Math.max(this.normalizarNumero(maximo), 1)) : 0;
-    const segment = Math.max(Math.min(percent, 1), 0) * circumference;
-    const gap = circumference / Math.max(total, 1);
-    return `${segment} ${gap}`;
+    const segment = (this.normalizarNumero(valor) / Math.max(total, 1)) * circumference;
+    return `${segment} ${circumference - segment}`;
   }
 
   public offsetCirculo(indice: number, total: number) {
     const circumference = 2 * Math.PI * 72;
-    const gap = circumference / Math.max(total, 1);
-    return indice * gap;
+    const acumulado = this.departamentos
+      .slice(0, indice)
+      .reduce((suma, item) => suma + this.normalizarNumero(item.total), 0);
+    return (acumulado / Math.max(total, 1)) * circumference;
   }
 }

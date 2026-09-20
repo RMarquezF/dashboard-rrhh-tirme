@@ -91,7 +91,7 @@
           <span class="legend-total">{{ anio }}</span>
         </div>
 
-        <div class="table-wrap">
+        <div class="table-wrap table-scroll-departments">
           <table>
             <thead>
               <tr>
@@ -129,30 +129,28 @@
             <h2>Resumen de trabajadores</h2>
             <p>Empleados con mayor acumulado de horas extra</p>
           </div>
-          <span class="legend-total">Top 10</span>
+          <span class="legend-total">{{ topTrabajadores().length }} empleados</span>
         </div>
 
-        <div class="table-wrap">
+        <div class="table-wrap table-scroll-workers">
           <table>
             <thead>
               <tr>
                 <th>#</th>
                 <th>Trabajador</th>
-                <th>Departamento</th>
-                <th>Total HE</th>
+                <th>HE normales</th>
               </tr>
             </thead>
             <tbody>
               @for (item of topTrabajadores(); track item.id; let index = $index) {
-                <tr [class.alert-orange]="claseAlerta(item.total) === 'advertencia'" [class.alert-red]="claseAlerta(item.total) === 'critico'">
+                <tr [class.alert-orange]="claseAlerta(item.normales) === 'advertencia'" [class.alert-red]="claseAlerta(item.normales) === 'critico'">
                   <td class="rank">{{ index + 1 }}</td>
                   <td class="worker-name">{{ nombreTrabajador(item) }}</td>
-                  <td>{{ item.departamento || '-' }}</td>
-                  <td class="hours">{{ item.total }}</td>
+                  <td class="hours">{{ item.normales }}</td>
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="4" class="empty-state-row">No hay trabajadores con datos.</td>
+                  <td colspan="3" class="empty-state-row">No hay trabajadores con datos.</td>
                 </tr>
               }
             </tbody>
@@ -181,8 +179,8 @@
                   r="72"
                   class="donut-segment"
                   [style.stroke]="coloresDepartamentos[i % coloresDepartamentos.length]"
-                  [style.stroke-dasharray]="segmentoCirculo(item.total, maxDepartamento(), i, departamentos.length)"
-                  [style.stroke-dashoffset]="-offsetCirculo(i, departamentos.length)"
+                  [style.stroke-dasharray]="segmentoCirculo(item.total, totalDepartamentos())"
+                  [style.stroke-dashoffset]="-offsetCirculo(i, totalDepartamentos())"
                 ></circle>
               }
             </svg>
@@ -227,10 +225,18 @@
             <div class="month-row">
               <span class="month-label">{{ nombreMes(item.mes) }}</span>
               <div class="bar-track" [title]="item.total + ' horas'">
-                <span class="bar-segment dot-normal" [style.width]="porcentaje(item.normales, maxMensual())"></span>
-                <span class="bar-segment dot-compensar" [style.width]="porcentaje(item.compensar, maxMensual())"></span>
-                <span class="bar-segment dot-busca" [style.width]="porcentaje(item.busca + item.buscanp, maxMensual())"></span>
-                <span class="bar-segment dot-combo" [style.width]="porcentaje(item.combo, maxMensual())"></span>
+                <span class="bar-segment dot-normal" [style.width]="porcentaje(item.normales, maxMensual())">
+                  @if (item.normales > 0) { <b class="bar-value">{{ item.normales }}</b> }
+                </span>
+                <span class="bar-segment dot-compensar" [style.width]="porcentaje(item.compensar, maxMensual())">
+                  @if (item.compensar > 0) { <b class="bar-value">{{ item.compensar }}</b> }
+                </span>
+                <span class="bar-segment dot-busca" [style.width]="porcentaje(item.busca + item.buscanp, maxMensual())">
+                  @if (item.busca + item.buscanp > 0) { <b class="bar-value">{{ item.busca + item.buscanp }}</b> }
+                </span>
+                <span class="bar-segment dot-combo" [style.width]="porcentaje(item.combo, maxMensual())">
+                  @if (item.combo > 0) { <b class="bar-value">{{ item.combo }}</b> }
+                </span>
               </div>
               <strong>{{ item.total | number:'1.0-0' }}</strong>
             </div>
