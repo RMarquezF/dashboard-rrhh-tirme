@@ -7,6 +7,7 @@ import { Personas } from './components/personas/personas';
 import { Turnos } from './components/turnos/turnos';
 import { HorasExtra } from './components/horas-extra/horas-extra';
 import { HorasExtraEmpleados } from './components/horas-extra-empleados/horas-extra-empleados';
+import { RankingCombo } from './components/ranking-combo/ranking-combo';
 
 const authGuard = () => {
   const authService = inject(AuthService);
@@ -26,5 +27,6 @@ export const routes: Routes = [
   { path: 'turnos', component: Turnos, canActivate: [authGuard] },
   { path: 'horas-extra', component: HorasExtra, canActivate: [authGuard] },
   { path: 'horas-extra-empleados', component: HorasExtraEmpleados, canActivate: [authGuard] },
+  { path: 'ranking-combo', component: RankingCombo, canActivate: [authGuard] },
   { path: '**', redirectTo: 'login' }
 ];

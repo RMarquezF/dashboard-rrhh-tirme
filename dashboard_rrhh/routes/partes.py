@@ -2,7 +2,7 @@ import calendar
 from datetime import date
 
 from flask import Blueprint, jsonify, request
-from sqlalchemy import func
+from sqlalchemy import extract, func
 
 from extensions import db
 from models import UserPayroll, ZParte, ZPeriodos
@@ -114,7 +114,7 @@ def get_he_por_periodo():
     ).outerjoin(UserPayroll, ZParte.PERNR == UserPayroll.NUMPER) \
      .filter(*filtros_periodo) \
      .group_by(ZParte.PERNR, UserPayroll.NAME, UserPayroll.SURNAME, ZParte.DPTO) \
-     .order_by(func.sum(total).desc()).limit(20).all()
+     .order_by(func.sum(total).desc()).all()
 
     return jsonify({
         'anio': anio,
@@ -316,39 +316,93 @@ def get_he_comite():
 @partes_bp.route('/ranking-combo', methods=['GET'])
 def get_ranking_combo():
     anio = request.args.get('anio', '2026', type=str)
-    _, comp, _, _, combo, total = get_he_expressions()
+    mes_desde = max(request.args.get('mes_desde', 1, type=int), 1)
+    mes_hasta = min(request.args.get('mes_hasta', 12, type=int), 12)
+    anio_natural = request.args.get('anio_natural', 'false').lower() in {'true', '1', 'si', 'yes'}
+    departamento = request.args.get('departamento', '').strip()
+    pernr = request.args.get('pernr', '').strip()
+    estado = request.args.get('estado', '').strip()
+    periodo_id = request.args.get('periodo_id', '').strip()
 
-    sabados = db.session.query(
-        UserPayroll.NAME.label('trabajador'),
-        ZParte.PERNR.label('id'),
-        func.coalesce(func.sum(combo), 0).label('total_horas')
-    ).outerjoin(UserPayroll, ZParte.PERNR == UserPayroll.NUMPER)\
-     .filter(ZParte.EJERC == anio)\
-     .group_by(ZParte.PERNR, UserPayroll.NAME)\
-     .order_by(func.sum(combo).desc()).limit(15).all()
+    if mes_desde > mes_hasta:
+        return jsonify({'message': 'El periodo de meses no es válido.'}), 400
 
-    total_he_rank = db.session.query(
-        UserPayroll.NAME.label('trabajador'),
-        ZParte.PERNR.label('id'),
-        func.coalesce(func.sum(total), 0).label('total')
-    ).outerjoin(UserPayroll, ZParte.PERNR == UserPayroll.NUMPER)\
-     .filter(ZParte.EJERC == anio)\
-     .group_by(ZParte.PERNR, UserPayroll.NAME)\
-     .order_by(func.sum(total).desc()).limit(15).all()
+    periodos = ZPeriodos.query.filter_by(EJERCICIO=anio).order_by(ZPeriodos.ID).all()
+    periodo_seleccionado = next((periodo for periodo in periodos if periodo.ID == periodo_id), None)
+    if periodo_id and not anio_natural and not periodo_seleccionado:
+        return jsonify({'message': 'El periodo seleccionado no existe para el ejercicio indicado.'}), 400
 
-    ranking_compensar = db.session.query(
-        UserPayroll.NAME.label('trabajador'),
-        ZParte.PERNR.label('id'),
-        func.coalesce(func.sum(comp), 0).label('hecomp')
-    ).outerjoin(UserPayroll, ZParte.PERNR == UserPayroll.NUMPER)\
-     .filter(ZParte.EJERC == anio)\
-     .group_by(ZParte.PERNR, UserPayroll.NAME)\
-     .order_by(func.sum(comp).desc()).limit(15).all()
+    if anio_natural:
+        filtros = [ZParte.PADAT.between(
+            date(int(anio), mes_desde, 1),
+            date(int(anio), mes_hasta, calendar.monthrange(int(anio), mes_hasta)[1]),
+        )]
+    elif periodo_seleccionado:
+        filtros = [ZParte.EJERC == periodo_seleccionado.EJERCICIO, ZParte.MES == periodo_seleccionado.ID]
+    else:
+        filtros = [ZParte.EJERC == anio, ZParte.MES.in_([f'{mes:02d}' for mes in range(mes_desde, mes_hasta + 1)])]
+
+    if departamento:
+        filtros.append(ZParte.DPTO == departamento)
+    if pernr:
+        filtros.append(ZParte.PERNR == pernr)
+    if estado:
+        filtros.append(ZParte.STAT == estado)
+
+    def suma(*nombres):
+        cols = [getattr(ZParte, nombre) for nombre in nombres]
+        res = cols[0]
+        for c in cols[1:]:
+            res = res + c
+        return res
+
+    combo_programadas = suma('DLCOP', 'DFCOP', 'NLCOP', 'NFCOP')
+    total_he = suma(
+        'DL', 'DF', 'NL', 'NF', 'DLB', 'DFB', 'NLB', 'NFB',
+        'DLF', 'DFF', 'NLF', 'NFF', 'DLC', 'DFC', 'NLC', 'NFC',
+        'DLCO', 'DFCO', 'NLCO', 'NFCO', 'DLBN', 'DFBN', 'NLBN', 'NFBN',
+        'DLCOP', 'DFCOP', 'NLCOP', 'NFCOP',
+    )
+    comp_dl = ZParte.DL
+    comp_df = ZParte.DF
+    comp_nl = ZParte.NL
+    comp_nf = ZParte.NF
+    compensables = comp_dl + comp_df + comp_nl + comp_nf
+    compensables_convertidas = (comp_dl * 1.6) + (comp_df * 2.0) + (comp_nl * 2.0) + (comp_nf * 2.5)
+
+    query = db.session.query(
+        ZParte.PERNR.label('pernr'), UserPayroll.NAME.label('nombre'), UserPayroll.SURNAME.label('apellidos'),
+        func.coalesce(func.sum(combo_programadas), 0).label('combo_programadas'),
+        func.coalesce(func.sum(total_he), 0).label('total_he'),
+        func.coalesce(func.sum(compensables), 0).label('he_compensables'),
+        func.coalesce(func.sum(compensables_convertidas), 0).label('he_compensables_convertidas'),
+    ).outerjoin(UserPayroll, ZParte.PERNR == UserPayroll.NUMPER).filter(*filtros) \
+     .group_by(ZParte.PERNR, UserPayroll.NAME, UserPayroll.SURNAME) \
+     .order_by(func.sum(total_he).desc(), ZParte.PERNR.asc()).all()
+
+    filas = [{
+        'pernr': row.pernr, 'nombre': row.nombre, 'apellidos': row.apellidos,
+        'combo_programadas': float(row.combo_programadas or 0),
+        'total_he': float(row.total_he or 0),
+        'he_compensables': float(row.he_compensables or 0),
+        'he_compensables_convertidas': round(float(row.he_compensables_convertidas or 0), 2),
+    } for row in query]
+    departamentos = [row[0] for row in db.session.query(ZParte.DPTO).filter(*filtros).filter(ZParte.DPTO.isnot(None)).distinct().order_by(ZParte.DPTO).all()]
 
     return jsonify({
-        "sabados_programados": [row._asdict() for row in sabados],
-        "ranking_total_he": [row._asdict() for row in total_he_rank],
-        "ranking_he_compensar": [row._asdict() for row in ranking_compensar]
+        'anio': anio, 'periodo_id': periodo_id, 'filas': filas,
+        'departamentos': departamentos,
+        'totales': {
+            'combo_programadas': sum(f['combo_programadas'] for f in filas),
+            'total_he': sum(f['total_he'] for f in filas),
+            'he_compensables': sum(f['he_compensables'] for f in filas),
+            'he_compensables_convertidas': round(sum(f['he_compensables_convertidas'] for f in filas), 2),
+        },
+        'periodos': [{
+            'id': p.ID, 'ejercicio': p.EJERCICIO, 'descripcion': p.DESCRIPTION or f'Periodo {p.ID}',
+            'fecha_inicio': p.FECHAINI.isoformat() if p.FECHAINI else None,
+            'fecha_fin': p.FECHAFIN.isoformat() if p.FECHAFIN else None,
+        } for p in periodos],
     }), 200
 # ---------------------------------------------------------
 # PANTALLAS ADICIONALES: SPs, BUSCAS Y TOP 10

@@ -46,7 +46,7 @@
 }
 
 .donut-segment {
-  stroke-linecap: round;
+  stroke-linecap: butt;
   transform-origin: center;
 }
 
@@ -250,7 +250,17 @@ h1 {
 .month-label { color: #73868a; font-size: .7rem; font-weight: 700; }
 .month-row strong { color: #365b60; font-size: .7rem; text-align: right; }
 .bar-track { display: flex; height: 1.05rem; overflow: hidden; border-radius: .2rem; background: #edf2f2; }
-.bar-segment { display: block; min-width: 0; height: 100%; }
+.bar-segment {
+  display: flex;
+  min-width: 0;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .45);
+}
+.bar-value { padding: 0 .15rem; font-size: .58rem; line-height: 1; white-space: nowrap; }
 
 .department-row { display: grid; gap: .3rem; }
 .row-label { color: #4e696d; font-size: .7rem; }
@@ -260,6 +270,39 @@ h1 {
 .department-track span { display: block; height: 100%; border-radius: inherit; background: #2a9d91; }
 
 .table-wrap { overflow-x: auto; }
+.table-scroll-departments {
+  max-height: 27rem;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.table-scroll-departments table { table-layout: fixed; }
+.table-scroll-departments th:first-child,
+.table-scroll-departments td:first-child {
+  width: 42%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.table-scroll-departments th:not(:first-child),
+.table-scroll-departments td:not(:first-child) { width: 11.6%; }
+.table-scroll-workers {
+  max-height: 27rem;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+}
+.table-scroll-workers table { table-layout: fixed; }
+.table-scroll-workers th:nth-child(1),
+.table-scroll-workers td:nth-child(1) { width: 3rem; }
+.table-scroll-workers th:nth-child(3),
+.table-scroll-workers td:nth-child(3) { width: 6rem; }
+.table-scroll-workers .worker-name { overflow: hidden; text-overflow: ellipsis; }
 table { width: 100%; border-collapse: collapse; font-size: .71rem; }
 th {
   background: linear-gradient(180deg, #173b47 0%, #214d5d 100%);

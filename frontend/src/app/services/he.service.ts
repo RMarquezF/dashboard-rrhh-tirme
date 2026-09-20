@@ -55,6 +55,23 @@ export interface HeEmpleadosResponse {
   periodos: HePeriodo[];
 }
 
+export interface RankingComboFila {
+  pernr: string;
+  nombre: string | null;
+  apellidos: string | null;
+  combo_programadas: number;
+  total_he: number;
+  he_compensables: number;
+  he_compensables_convertidas: number;
+}
+
+export interface RankingComboResponse {
+  filas: RankingComboFila[];
+  departamentos: string[];
+  totales: Omit<RankingComboFila, 'pernr' | 'nombre' | 'apellidos'>;
+  periodos: HePeriodo[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class HeService {
   private readonly http = inject(HttpClient);
@@ -87,5 +104,14 @@ export class HeService {
       .set('periodo_id', filtros.periodoId || '');
 
     return this.http.get<HeEmpleadosResponse>(`${this.apiUrl}/he-por-empleado`, { params });
+  }
+
+  obtenerRankingCombo(anio: number, mesDesde: number, mesHasta: number, anioNatural: boolean, filtros: { departamento?: string; trabajador?: string; estado?: string; periodoId?: string } = {}): Observable<RankingComboResponse> {
+    const params = new HttpParams()
+      .set('anio', anio).set('mes_desde', mesDesde).set('mes_hasta', mesHasta)
+      .set('anio_natural', anioNatural)
+      .set('departamento', filtros.departamento || '').set('pernr', filtros.trabajador || '')
+      .set('estado', filtros.estado || '').set('periodo_id', filtros.periodoId || '');
+    return this.http.get<RankingComboResponse>(`${this.apiUrl}/ranking-combo`, { params });
   }
 }
