@@ -7,7 +7,7 @@ import { AuthService } from '../../services/auth.service';
   selector: 'app-login',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './login.html'
+  templateUrl: './login.html',
 })
 export class Login {
   private authService = inject(AuthService);
@@ -17,7 +17,7 @@ export class Login {
   public password = '';
   public selectedRole = 'empleado';
   public availableRoles: string[] = ['empleado']; // Todos tienen empleado por defecto
-  
+
   public step: 1 | 2 = 1; // 1: Pedir email, 2: Pedir contraseña y rol
   public errorMessage = '';
   public isLoading = false;
@@ -40,7 +40,8 @@ export class Login {
       next: (response: any) => {
         this.isLoading = false;
         // response.roles contendrá un array como ['empleado', 'hr', 'vi']
-        this.availableRoles = response.roles && response.roles.length > 0 ? response.roles : ['empleado'];
+        this.availableRoles =
+          response.roles && response.roles.length > 0 ? response.roles : ['empleado'];
         this.selectedRole = 'empleado'; // Por defecto se selecciona empleado
 
         if (this.isAdminEmail() || this.availableRoles.length === 1) {
@@ -52,7 +53,7 @@ export class Login {
       error: (err) => {
         this.isLoading = false;
         this.errorMessage = err.error?.message || 'Correo no encontrado en la base de datos.';
-      }
+      },
     });
   }
 
@@ -73,7 +74,7 @@ export class Login {
       error: (err) => {
         this.isLoading = false;
         this.errorMessage = err.error?.message || 'Contraseña incorrecta.';
-      }
+      },
     });
   }
 

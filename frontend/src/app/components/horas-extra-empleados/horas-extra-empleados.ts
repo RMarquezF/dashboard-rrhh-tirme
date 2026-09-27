@@ -27,6 +27,7 @@ export class HorasExtraEmpleados implements OnInit, OnDestroy {
   public periodo = '';
   public orden = 'horas';
   public empleados: HeEmpleado[] = [];
+  public trabajadoresDisponibles: HeEmpleado[] = [];
   public departamentos: string[] = [];
   public periodos: HePeriodo[] = [];
   public total = 0;
@@ -41,43 +42,65 @@ export class HorasExtraEmpleados implements OnInit, OnDestroy {
     this.solicitud?.unsubscribe();
     this.isLoading = true;
     this.errorMessage = '';
-    this.solicitud = this.heService.obtenerHorasPorEmpleado(this.anio, this.mesDesde, this.mesHasta, this.anioNatural, this.orden, {
-      departamento: this.departamento,
-      trabajador: this.trabajador,
-      estado: this.estado,
-      periodoId: this.periodo,
-    }).pipe(
-      takeUntil(this.destroy$),
-      finalize(() => {
-        this.isLoading = false;
-        this.changeDetector.markForCheck();
-      }),
-    ).subscribe({
-      next: (response) => {
-        this.empleados = response.empleados || [];
-        this.departamentos = response.departamentos || [];
-        this.periodos = response.periodos || [];
-        this.total = Number(response.total || 0);
-        this.changeDetector.markForCheck();
-      },
-      error: (error) => {
-        this.empleados = [];
-        this.departamentos = [];
-        this.total = 0;
-        this.errorMessage = error?.error?.message || 'No se ha podido cargar el listado de horas por empleado.';
-        this.changeDetector.markForCheck();
-      },
-    });
+    this.solicitud = this.heService
+      .obtenerHorasPorEmpleado(
+        this.anio,
+        this.mesDesde,
+        this.mesHasta,
+        this.anioNatural,
+        this.orden,
+        {
+          departamento: this.departamento,
+          trabajador: this.trabajador,
+          estado: this.estado,
+          periodoId: this.periodo,
+        },
+      )
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.isLoading = false;
+          this.changeDetector.markForCheck();
+        }),
+      )
+      .subscribe({
+        next: (response) => {
+          this.empleados = response.empleados || [];
+          this.departamentos = response.departamentos || [];
+          this.periodos = response.periodos || [];
+          this.total = Number(response.total || 0);
+
+          // Mantenemos la lista completa de trabajadores en el combo si no hay un filtro de trabajador activo
+          if (!this.trabajador && response.empleados) {
+            this.trabajadoresDisponibles = response.empleados;
+          }
+
+          this.changeDetector.markForCheck();
+        },
+        error: (error) => {
+          this.empleados = [];
+          this.departamentos = [];
+          this.total = 0;
+          this.errorMessage =
+            error?.error?.message || 'No se ha podido cargar el listado de horas por empleado.';
+          this.changeDetector.markForCheck();
+        },
+      });
   }
 
   public cambiarAnio(valor: number) {
     this.anio = Number(valor);
     this.periodo = '';
+    this.trabajador = ''; // Limpiamos el trabajador al cambiar de año
     this.cargar();
   }
 
   public nombreEmpleado(empleado: HeEmpleado) {
     return [empleado.nombre, empleado.apellidos].filter(Boolean).join(' ') || 'Sin nombre';
+  }
+
+  public nombreTrabajador(item: HeEmpleado) {
+    return [item.nombre, item.apellidos].filter(Boolean).join(' ') || item.pernr;
   }
 
   public ngOnDestroy() {

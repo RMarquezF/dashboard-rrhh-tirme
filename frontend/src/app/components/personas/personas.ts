@@ -10,4 +10,4 @@ import { FiltrosService } from '../../services/filtros';
 })
 export class Personas {
   public filtrosService = inject(FiltrosService);
-} 
+}

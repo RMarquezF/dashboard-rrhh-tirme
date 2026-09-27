@@ -3,10 +3,13 @@
     <div>
       <p class="eyebrow">Control de horas extraordinarias</p>
       <h1>HE por periodos</h1>
-      <p class="subtitle">Resumen por departamento y seguimiento de los trabajadores con mayor acumulado.</p>
+      <p class="subtitle">
+        Resumen por departamento y seguimiento de los trabajadores con mayor acumulado.
+      </p>
     </div>
     <div class="he-filters">
-      <label>Departamento
+      <label
+        >Departamento
         <select [(ngModel)]="departamento" (ngModelChange)="cargarResumen()">
           <option value="">Todos los departamentos</option>
           @for (item of departamentosDisponibles; track item) {
@@ -14,7 +17,8 @@
           }
         </select>
       </label>
-      <label>Trabajador
+      <label
+        >Trabajador
         <select [(ngModel)]="trabajador" (ngModelChange)="cargarResumen()">
           <option value="">Todos los trabajadores</option>
           @for (item of trabajadoresDisponibles; track item.id) {
@@ -22,14 +26,16 @@
           }
         </select>
       </label>
-      <label>Año
+      <label
+        >Año
         <select [(ngModel)]="anio" (ngModelChange)="onFiltroChange('anio', $event)">
           <option [value]="2026">2026</option>
           <option [value]="2025">2025</option>
           <option [value]="2024">2024</option>
         </select>
       </label>
-      <label>Periodo
+      <label
+        >Periodo
         <select [(ngModel)]="periodo" (ngModelChange)="onPeriodoChange($event)">
           <option value="">Todos los periodos</option>
           @for (item of periodos; track item.id) {
@@ -37,7 +43,8 @@
           }
         </select>
       </label>
-      <label>Estado
+      <label
+        >Estado
         <select [(ngModel)]="estado" (ngModelChange)="cargarResumen()">
           @for (item of estados; track item.valor) {
             <option [value]="item.valor">{{ item.etiqueta }}</option>
@@ -45,7 +52,7 @@
         </select>
       </label>
       <label class="natural-toggle">
-        <input type="checkbox" [(ngModel)]="anioNatural" (ngModelChange)="onModoChange()">
+        <input type="checkbox" [(ngModel)]="anioNatural" (ngModelChange)="onModoChange()" />
         <span>Año natural</span>
       </label>
     </div>
@@ -61,7 +68,7 @@
     <div class="he-kpis">
       <article class="kpi-card kpi-main">
         <span>Total horas extra</span>
-        <strong>{{ totalHoras() | number:'1.0-0' }}</strong>
+        <strong>{{ totalHoras() | number: '1.0-0' }}</strong>
         <small>Periodo seleccionado</small>
       </article>
       <article class="kpi-card">
@@ -115,7 +122,9 @@
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="6" class="empty-state-row">No hay datos para el periodo seleccionado.</td>
+                  <td colspan="6" class="empty-state-row">
+                    No hay datos para el periodo seleccionado.
+                  </td>
                 </tr>
               }
             </tbody>
@@ -143,7 +152,10 @@
             </thead>
             <tbody>
               @for (item of topTrabajadores(); track item.id; let index = $index) {
-                <tr [class.alert-orange]="claseAlerta(item.normales) === 'advertencia'" [class.alert-red]="claseAlerta(item.normales) === 'critico'">
+                <tr
+                  [class.alert-orange]="claseAlerta(item.normales) === 'advertencia'"
+                  [class.alert-red]="claseAlerta(item.normales) === 'critico'"
+                >
                   <td class="rank">{{ index + 1 }}</td>
                   <td class="worker-name">{{ nombreTrabajador(item) }}</td>
                   <td class="hours">{{ item.normales }}</td>
@@ -185,7 +197,7 @@
               }
             </svg>
             <div class="donut-center">
-              <strong>{{ totalHoras() | number:'1.0-0' }}</strong>
+              <strong>{{ totalHoras() | number: '1.0-0' }}</strong>
               <span>Total HE</span>
             </div>
           </div>
@@ -193,9 +205,12 @@
           <div class="donut-legend">
             @for (item of departamentos; track item.departamento; let i = $index) {
               <div class="legend-item">
-                <span class="legend-color" [style.background]="coloresDepartamentos[i % coloresDepartamentos.length]"></span>
+                <span
+                  class="legend-color"
+                  [style.background]="coloresDepartamentos[i % coloresDepartamentos.length]"
+                ></span>
                 <span>{{ item.departamento || 'Sin departamento' }}</span>
-                <strong>{{ item.total | number:'1.0-0' }}</strong>
+                <strong>{{ item.total | number: '1.0-0' }}</strong>
               </div>
             } @empty {
               <p class="empty-state">No hay datos para el periodo seleccionado.</p>
@@ -225,20 +240,40 @@
             <div class="month-row">
               <span class="month-label">{{ nombreMes(item.mes) }}</span>
               <div class="bar-track" [title]="item.total + ' horas'">
-                <span class="bar-segment dot-normal" [style.width]="porcentaje(item.normales, maxMensual())">
-                  @if (item.normales > 0) { <b class="bar-value">{{ item.normales }}</b> }
+                <span
+                  class="bar-segment dot-normal"
+                  [style.width]="porcentaje(item.normales, maxMensual())"
+                >
+                  @if (item.normales > 0) {
+                    <b class="bar-value">{{ item.normales }}</b>
+                  }
                 </span>
-                <span class="bar-segment dot-compensar" [style.width]="porcentaje(item.compensar, maxMensual())">
-                  @if (item.compensar > 0) { <b class="bar-value">{{ item.compensar }}</b> }
+                <span
+                  class="bar-segment dot-compensar"
+                  [style.width]="porcentaje(item.compensar, maxMensual())"
+                >
+                  @if (item.compensar > 0) {
+                    <b class="bar-value">{{ item.compensar }}</b>
+                  }
                 </span>
-                <span class="bar-segment dot-busca" [style.width]="porcentaje(item.busca + item.buscanp, maxMensual())">
-                  @if (item.busca + item.buscanp > 0) { <b class="bar-value">{{ item.busca + item.buscanp }}</b> }
+                <span
+                  class="bar-segment dot-busca"
+                  [style.width]="porcentaje(item.busca + item.buscanp, maxMensual())"
+                >
+                  @if (item.busca + item.buscanp > 0) {
+                    <b class="bar-value">{{ item.busca + item.buscanp }}</b>
+                  }
                 </span>
-                <span class="bar-segment dot-combo" [style.width]="porcentaje(item.combo, maxMensual())">
-                  @if (item.combo > 0) { <b class="bar-value">{{ item.combo }}</b> }
+                <span
+                  class="bar-segment dot-combo"
+                  [style.width]="porcentaje(item.combo, maxMensual())"
+                >
+                  @if (item.combo > 0) {
+                    <b class="bar-value">{{ item.combo }}</b>
+                  }
                 </span>
               </div>
-              <strong>{{ item.total | number:'1.0-0' }}</strong>
+              <strong>{{ item.total | number: '1.0-0' }}</strong>
             </div>
           }
         </div>

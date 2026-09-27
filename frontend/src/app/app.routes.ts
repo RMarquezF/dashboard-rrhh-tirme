@@ -28,5 +28,5 @@ export const routes: Routes = [
   { path: 'horas-extra', component: HorasExtra, canActivate: [authGuard] },
   { path: 'horas-extra-empleados', component: HorasExtraEmpleados, canActivate: [authGuard] },
   { path: 'ranking-combo', component: RankingCombo, canActivate: [authGuard] },
-  { path: '**', redirectTo: 'login' }
+  { path: '**', redirectTo: 'login' },
 ];

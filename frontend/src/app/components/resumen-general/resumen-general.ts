@@ -33,12 +33,8 @@ export class ResumenGeneral {
     return base;
   });
 
-  public activosPlanta = computed(
-    () => Math.round(this.totalPlantilla() * 0.93),
-  );
-  public bajasMedicas = computed(
-    () => Math.round(this.totalPlantilla() * 0.05),
-  );
+  public activosPlanta = computed(() => Math.round(this.totalPlantilla() * 0.93));
+  public bajasMedicas = computed(() => Math.round(this.totalPlantilla() * 0.05));
   public vacaciones = computed(
     () => this.totalPlantilla() - this.activosPlanta() - this.bajasMedicas(),
   );

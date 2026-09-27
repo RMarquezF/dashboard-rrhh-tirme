@@ -1,4 +1,6 @@
-<aside class="w-64 bg-tirme-dark text-white flex flex-col h-screen min-h-screen sticky top-0 shadow-lg">
+<aside
+  class="w-64 bg-tirme-dark text-white flex flex-col h-screen min-h-screen sticky top-0 shadow-lg"
+>
   <!-- Logo / Cabecera del Sidebar -->
   <div class="p-5 border-b border-slate-700">
     <div class="flex items-center space-x-3">
@@ -10,10 +12,16 @@
     </div>
 
     <details class="mt-4 group">
-      <summary class="flex items-center justify-between gap-2 cursor-pointer list-none rounded-lg px-3 py-2 text-left hover:bg-slate-800 transition-colors">
+      <summary
+        class="flex items-center justify-between gap-2 cursor-pointer list-none rounded-lg px-3 py-2 text-left hover:bg-slate-800 transition-colors"
+      >
         <span class="min-w-0">
-          <span class="block text-[10px] uppercase tracking-wide text-slate-400">Usuario conectado</span>
-          <span class="block truncate text-xs font-medium text-white">{{ authService.usuarioActual()?.email }}</span>
+          <span class="block text-[10px] uppercase tracking-wide text-slate-400"
+            >Usuario conectado</span
+          >
+          <span class="block truncate text-xs font-medium text-white">{{
+            authService.usuarioActual()?.email
+          }}</span>
         </span>
         <span class="text-slate-400 group-open:rotate-180 transition-transform">⌄</span>
       </summary>

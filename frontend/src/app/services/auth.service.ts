@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { tap } from 'rxjs';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class AuthService {
   private http = inject(HttpClient);
@@ -29,7 +29,7 @@ export class AuthService {
         this.usuarioActual.set(response.user);
         this.rolActivo.set(rol);
         this.router.navigate(['/resumen-general']);
-      })
+      }),
     );
   }
 
