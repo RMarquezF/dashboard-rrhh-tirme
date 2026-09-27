@@ -72,6 +72,52 @@ export interface RankingComboResponse {
   periodos: HePeriodo[];
 }
 
+export interface SpPersona {
+  nombre: string | null;
+  apellidos: string | null;
+  id: string;
+  departamento: string | null;
+  sp: number;
+}
+
+export interface SpDepartamento {
+  departamento: string | null;
+  sp: number;
+}
+
+export interface SpPeriodoResumen {
+  meses: number;
+  fecha_desde: string;
+  fecha_hasta: string;
+  personas: SpPersona[];
+  departamentos: SpDepartamento[];
+  total_sp: number;
+  total_personas: number;
+}
+
+export interface SpResumenPeriodosResponse {
+  fecha_hasta: string;
+  periodos: { '12': SpPeriodoResumen; '24': SpPeriodoResumen };
+}
+
+export interface HeEstado {
+  valor: string;
+  etiqueta: string;
+  color?: string;
+}
+
+export interface PlantillaGrupoResumen {
+  nombre: string;
+  total: number;
+}
+
+export interface PlantillaResumenResponse {
+  total_plantilla: number;
+  por_grupo: PlantillaGrupoResumen[];
+  por_area: PlantillaGrupoResumen[];
+  por_departamento: PlantillaGrupoResumen[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class HeService {
   private readonly http = inject(HttpClient);
@@ -113,5 +159,24 @@ export class HeService {
       .set('departamento', filtros.departamento || '').set('pernr', filtros.trabajador || '')
       .set('estado', filtros.estado || '').set('periodo_id', filtros.periodoId || '');
     return this.http.get<RankingComboResponse>(`${this.apiUrl}/ranking-combo`, { params });
+  }
+
+  obtenerResumenSp(fechaHasta?: string): Observable<SpResumenPeriodosResponse> {
+    let params = new HttpParams();
+    if (fechaHasta) {
+      params = params.set('fecha_hasta', fechaHasta);
+    }
+    return this.http.get<SpResumenPeriodosResponse>(`${this.apiUrl}/sp-resumen-periodos`, { params });
+  }
+
+  obtenerEstados(): Observable<HeEstado[]> {
+    return this.http.get<HeEstado[]>(`${this.apiUrl}/estados`);
+  }
+
+  obtenerPlantillaResumen(filtros: { grupo?: string; direccion?: string } = {}): Observable<PlantillaResumenResponse> {
+    const params = new HttpParams()
+      .set('grupo', filtros.grupo || '')
+      .set('direccion', filtros.direccion || '');
+    return this.http.get<PlantillaResumenResponse>(`${this.apiUrl}/plantilla-resumen`, { params });
   }
 }

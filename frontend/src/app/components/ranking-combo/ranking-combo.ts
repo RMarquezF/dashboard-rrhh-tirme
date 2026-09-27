@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { finalize, Subject, Subscription, takeUntil } from 'rxjs';
-import { HePeriodo, HeService, RankingComboFila, RankingComboResponse } from '../../services/he.service';
+import { HeEstado, HePeriodo, HeService, RankingComboFila, RankingComboResponse } from '../../services/he.service';
 
 @Component({
   selector: 'app-ranking-combo',
@@ -26,13 +26,32 @@ export class RankingCombo implements OnInit, OnDestroy {
   public estado = '';
   public periodo = '';
   public periodos: HePeriodo[] = [];
+  public estados: HeEstado[] = [{ valor: '', etiqueta: 'Todos' }];
   public departamentos: string[] = [];
   public filas: RankingComboFila[] = [];
   public totales = { combo_programadas: 0, total_he: 0, he_compensables: 0, he_compensables_convertidas: 0 };
   public isLoading = false;
   public errorMessage = '';
 
-  public ngOnInit() { this.cargar(); }
+  public ngOnInit() {
+    this.cargarEstados();
+    this.cargar();
+  }
+
+  private cargarEstados() {
+    this.heService
+      .obtenerEstados()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (estados) => {
+          this.estados = [{ valor: '', etiqueta: 'Todos' }, ...(estados || [])];
+          this.changeDetector.markForCheck();
+        },
+        error: () => {
+          // Si falla la carga de estados, se mantiene únicamente la opción "Todos".
+        },
+      });
+  }
 
   public cargar() {
     this.solicitud?.unsubscribe();

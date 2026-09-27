@@ -5,10 +5,25 @@ from flask import Blueprint, jsonify, request
 from sqlalchemy import extract, func
 
 from extensions import db
-from models import UserPayroll, ZParte, ZPeriodos
+from models import AreasPayroll, DepartmentPayroll, EppartStatus, GruposPayroll, UserPayroll, ZParte, ZPeriodos
 from schemas.parte_schema import partes_schema
 
 partes_bp = Blueprint('partes', __name__, url_prefix='/api/partes')
+
+
+# ---------------------------------------------------------
+# ESTADOS DE PARTES (tabla eppartstatus)
+# ---------------------------------------------------------
+
+@partes_bp.route('/estados', methods=['GET'])
+def get_estados():
+    """Devuelve los estados de parte disponibles en la tabla eppartstatus,
+    usados para poblar los combos de filtro 'Estado' de las distintas pantallas."""
+    estados = EppartStatus.query.order_by(EppartStatus.STATUS).all()
+    return jsonify([
+        {'valor': estado.STATUS, 'etiqueta': estado.DESCRIPTION, 'color': estado.COLOR}
+        for estado in estados
+    ]), 200
 
 # Fórmulas base de horas extras sobre campos de MariaDB
 def get_he_expressions():
@@ -253,6 +268,69 @@ def get_partes_empleado(pernr):
     return jsonify(partes_schema.dump(partes)), 200
 
 # ---------------------------------------------------------
+# PLANTILLA / EFECTIVOS ACTIVOS
+# ---------------------------------------------------------
+
+@partes_bp.route('/plantilla-resumen', methods=['GET'])
+def get_plantilla_resumen():
+    """
+    Devuelve el total de empleados activos (ACTIVE = 1) en userpayroll
+    junto con el desglose de activos por grupo, área y departamento.
+    """
+    grupo = request.args.get('grupo', '').strip()
+    direccion = request.args.get('direccion', '').strip()
+
+    filtros = [UserPayroll.ACTIVE == True]  # noqa: E712
+    if grupo and grupo.upper() != 'TODOS':
+        filtros.append(GruposPayroll.NAME == grupo)
+    if direccion and direccion.upper() != 'TODAS':
+        filtros.append(AreasPayroll.NAME == direccion)
+
+    total_plantilla = db.session.query(func.count(UserPayroll.ID)) \
+        .outerjoin(GruposPayroll, UserPayroll.GRUPO == GruposPayroll.CODE) \
+        .outerjoin(AreasPayroll, UserPayroll.AREA == AreasPayroll.CODE) \
+        .filter(*filtros).scalar() or 0
+
+    por_grupo = db.session.query(
+        func.coalesce(GruposPayroll.NAME, 'Sin grupo').label('nombre'),
+        func.count(UserPayroll.ID).label('total'),
+    ).select_from(UserPayroll) \
+     .outerjoin(GruposPayroll, UserPayroll.GRUPO == GruposPayroll.CODE) \
+     .outerjoin(AreasPayroll, UserPayroll.AREA == AreasPayroll.CODE) \
+     .filter(*filtros) \
+     .group_by(GruposPayroll.NAME) \
+     .order_by(func.count(UserPayroll.ID).desc()).all()
+
+    por_area = db.session.query(
+        func.coalesce(AreasPayroll.NAME, 'Sin área').label('nombre'),
+        func.count(UserPayroll.ID).label('total'),
+    ).select_from(UserPayroll) \
+     .outerjoin(GruposPayroll, UserPayroll.GRUPO == GruposPayroll.CODE) \
+     .outerjoin(AreasPayroll, UserPayroll.AREA == AreasPayroll.CODE) \
+     .filter(*filtros) \
+     .group_by(AreasPayroll.NAME) \
+     .order_by(func.count(UserPayroll.ID).desc()).all()
+
+    por_departamento = db.session.query(
+        func.coalesce(DepartmentPayroll.NAME, 'Sin departamento').label('nombre'),
+        func.count(UserPayroll.ID).label('total'),
+    ).select_from(UserPayroll) \
+     .outerjoin(GruposPayroll, UserPayroll.GRUPO == GruposPayroll.CODE) \
+     .outerjoin(AreasPayroll, UserPayroll.AREA == AreasPayroll.CODE) \
+     .outerjoin(DepartmentPayroll, UserPayroll.DEPARTMENT == DepartmentPayroll.CODE) \
+     .filter(*filtros) \
+     .group_by(DepartmentPayroll.NAME) \
+     .order_by(func.count(UserPayroll.ID).desc()).all()
+
+    return jsonify({
+        'total_plantilla': int(total_plantilla),
+        'por_grupo': [row._asdict() for row in por_grupo],
+        'por_area': [row._asdict() for row in por_area],
+        'por_departamento': [row._asdict() for row in por_departamento],
+    }), 200
+
+
+# ---------------------------------------------------------
 # LAS 4 PANTALLAS DE LOOKER STUDIO
 # ---------------------------------------------------------
 
@@ -422,6 +500,69 @@ def get_sp_evolutivo():
 
     return jsonify({
         "sp_ultimos_12_meses": [row._asdict() for row in sp_12m]
+    }), 200
+
+
+@partes_bp.route('/sp-resumen-periodos', methods=['GET'])
+def get_sp_resumen_periodos():
+    fecha_hasta_texto = request.args.get('fecha_hasta', '').strip()
+    if fecha_hasta_texto:
+        try:
+            fecha_hasta = date.fromisoformat(fecha_hasta_texto)
+        except ValueError:
+            return jsonify({'message': 'La fecha_hasta no es válida. Usa el formato YYYY-MM-DD.'}), 400
+    else:
+        fecha_hasta = date.today()
+
+    def restar_meses(fecha, meses):
+        total_meses = fecha.year * 12 + fecha.month - 1 - meses
+        anio, mes = divmod(total_meses, 12)
+        dia = min(fecha.day, calendar.monthrange(anio, mes + 1)[1])
+        return date(anio, mes + 1, dia)
+
+    def resumen_periodo(meses):
+        fecha_desde = restar_meses(fecha_hasta, meses)
+        filtros = [
+            ZParte.PADAT.between(fecha_desde, fecha_hasta),
+            func.trim(func.coalesce(ZParte.SP, '')) != '',
+            func.trim(func.coalesce(ZParte.SP, '')) != '0',
+        ]
+
+        personas = db.session.query(
+            UserPayroll.NAME.label('nombre'),
+            UserPayroll.SURNAME.label('apellidos'),
+            ZParte.PERNR.label('id'),
+            ZParte.DPTO.label('departamento'),
+            func.count().label('sp'),
+        ).outerjoin(UserPayroll, ZParte.PERNR == UserPayroll.NUMPER) \
+         .filter(*filtros) \
+         .group_by(ZParte.PERNR, UserPayroll.NAME, UserPayroll.SURNAME, ZParte.DPTO) \
+         .order_by(func.count().desc(), ZParte.PERNR.asc()).all()
+
+        departamentos = db.session.query(
+            ZParte.DPTO.label('departamento'),
+            func.count().label('sp'),
+        ).filter(*filtros) \
+         .group_by(ZParte.DPTO) \
+         .order_by(func.count().desc(), ZParte.DPTO.asc()).all()
+
+        total_personas = sum(int(row.sp or 0) for row in personas)
+        return {
+            'meses': meses,
+            'fecha_desde': fecha_desde.isoformat(),
+            'fecha_hasta': fecha_hasta.isoformat(),
+            'personas': [row._asdict() for row in personas],
+            'departamentos': [row._asdict() for row in departamentos],
+            'total_sp': total_personas,
+            'total_personas': len(personas),
+        }
+
+    return jsonify({
+        'fecha_hasta': fecha_hasta.isoformat(),
+        'periodos': {
+            '12': resumen_periodo(12),
+            '24': resumen_periodo(24),
+        },
     }), 200
 
 

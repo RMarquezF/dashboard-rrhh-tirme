@@ -1,6 +1,8 @@
-import { Component, inject, computed } from '@angular/core';
+import { Component, ChangeDetectorRef, OnDestroy, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { finalize, Subject, Subscription, takeUntil } from 'rxjs';
 import { FiltrosService } from '../../services/filtros';
+import { HeService, PlantillaGrupoResumen } from '../../services/he.service';
 
 @Component({
   selector: 'app-resumen-general',
@@ -8,53 +10,71 @@ import { FiltrosService } from '../../services/filtros';
   imports: [CommonModule],
   templateUrl: './resumen-general.html',
 })
-export class ResumenGeneral {
+export class ResumenGeneral implements OnDestroy {
   public filtrosService = inject(FiltrosService);
+  private readonly heService = inject(HeService);
+  private readonly changeDetector = inject(ChangeDetectorRef);
+  private readonly destroy$ = new Subject<void>();
+  private solicitud?: Subscription;
 
-  // Métricas reactivas que cambian según los filtros globales
-  public totalPlantilla = computed(() => {
-    const filtros = this.filtrosService.filtros();
-    let base = 248;
+  // Total real de empleados activos (ACTIVE = 1) en userpayroll
+  public totalPlantilla = signal(0);
 
-    // Simulamos variación según el año o dirección seleccionada
-    if (filtros.anio === 2025) {
-      base = 230;
-    }
-    if (filtros.anio === 2024) {
-      base = 210;
-    }
-    if (filtros.direccion === 'Operaciones') {
-      base = 160;
-    }
-    if (filtros.direccion === 'Administracion') {
-      base = 40;
-    }
+  // Resúmenes de empleados activos agrupados por grupo, área y departamento
+  public porGrupo = signal<PlantillaGrupoResumen[]>([]);
+  public porArea = signal<PlantillaGrupoResumen[]>([]);
+  public porDepartamento = signal<PlantillaGrupoResumen[]>([]);
 
-    return base;
-  });
+  public isLoading = signal(false);
+  public errorMessage = signal('');
 
-  public activosPlanta = computed(
-    () => Math.round(this.totalPlantilla() * 0.93),
-  );
-  public bajasMedicas = computed(
-    () => Math.round(this.totalPlantilla() * 0.05),
-  );
-  public vacaciones = computed(
-    () => this.totalPlantilla() - this.activosPlanta() - this.bajasMedicas(),
-  );
+  constructor() {
+    // Recarga el resumen cada vez que cambian los filtros globales
+    effect(() => {
+      const filtros = this.filtrosService.filtros();
+      this.cargar(filtros.grupo, filtros.direccion);
+    });
+  }
 
-  // Porcentaje de asistencia dinámico según la dirección o filtros
-  public porcentajeAsistencia = computed(() => {
-    const filtros = this.filtrosService.filtros();
-    let porcentaje = 92.7;
+  private cargar(grupo: string, direccion: string) {
+    this.solicitud?.unsubscribe();
+    this.isLoading.set(true);
+    this.errorMessage.set('');
 
-    if (filtros.direccion === 'Administracion') {
-      porcentaje = 96.5;
-    }
-    if (filtros.direccion === 'Operaciones') {
-      porcentaje = 90.4;
-    }
+    this.solicitud = this.heService
+      .obtenerPlantillaResumen({ grupo, direccion })
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.isLoading.set(false);
+          this.changeDetector.markForCheck();
+        }),
+      )
+      .subscribe({
+        next: (response) => {
+          this.totalPlantilla.set(response.total_plantilla || 0);
+          this.porGrupo.set(response.por_grupo || []);
+          this.porArea.set(response.por_area || []);
+          this.porDepartamento.set(response.por_departamento || []);
+          this.changeDetector.markForCheck();
+        },
+        error: (error) => {
+          this.totalPlantilla.set(0);
+          this.porGrupo.set([]);
+          this.porArea.set([]);
+          this.porDepartamento.set([]);
+          this.errorMessage.set(
+            error?.error?.message || 'No se ha podido cargar el resumen de plantilla.',
+          );
+          this.changeDetector.markForCheck();
+        },
+      });
+  }
 
-    return porcentaje;
-  });
+  public ngOnDestroy() {
+    this.solicitud?.unsubscribe();
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 }
+

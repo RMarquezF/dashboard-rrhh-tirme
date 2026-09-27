@@ -28,7 +28,7 @@
       </label>
       <label>Estado
         <select [(ngModel)]="estado" (ngModelChange)="cargar()">
-          <option value="">Todos</option><option value="P">Pendiente</option><option value="V">Validado</option><option value="T">Traspasado</option>
+          @for (item of estados; track item.valor) { <option [value]="item.valor">{{ item.etiqueta }}</option> }
         </select>
       </label>
       <label class="natural-toggle"><input type="checkbox" [(ngModel)]="anioNatural" (ngModelChange)="cargar()"><span>Año natural</span></label>
