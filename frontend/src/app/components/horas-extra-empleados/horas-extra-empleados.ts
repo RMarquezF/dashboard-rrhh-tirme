@@ -26,7 +26,16 @@ export class HorasExtraEmpleados implements OnInit, OnDestroy {
   public estado = '';
   public periodo = '';
   public orden = 'horas';
+
+  public readonly estados = [
+    { valor: '', etiqueta: 'Todos los estados' },
+    { valor: 'P', etiqueta: 'Pendiente' },
+    { valor: 'V', etiqueta: 'Validado' },
+    { valor: 'T', etiqueta: 'Traspasado a nómina' },
+  ];
+
   public empleados: HeEmpleado[] = [];
+  public trabajadoresDisponibles: HeEmpleado[] = [];
   public departamentos: string[] = [];
   public periodos: HePeriodo[] = [];
   public total = 0;
@@ -58,6 +67,11 @@ export class HorasExtraEmpleados implements OnInit, OnDestroy {
         this.departamentos = response.departamentos || [];
         this.periodos = response.periodos || [];
         this.total = Number(response.total || 0);
+
+        if (!this.trabajador && response.empleados) {
+          this.trabajadoresDisponibles = response.empleados;
+        }
+
         this.changeDetector.markForCheck();
       },
       error: (error) => {
@@ -73,6 +87,7 @@ export class HorasExtraEmpleados implements OnInit, OnDestroy {
   public cambiarAnio(valor: number) {
     this.anio = Number(valor);
     this.periodo = '';
+    this.trabajador = '';
     this.cargar();
   }
 

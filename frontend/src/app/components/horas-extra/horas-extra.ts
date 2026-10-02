@@ -62,7 +62,7 @@ export class HorasExtra implements OnInit, OnDestroy {
           this.changeDetector.markForCheck();
         },
         error: () => {
-          // Si falla la carga de estados, se mantiene únicamente la opción "Todos los estados".
+          // Si falla, se mantiene la opción por defecto
         },
       });
   }

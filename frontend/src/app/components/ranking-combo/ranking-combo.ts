@@ -29,6 +29,7 @@ export class RankingCombo implements OnInit, OnDestroy {
   public estados: HeEstado[] = [{ valor: '', etiqueta: 'Todos' }];
   public departamentos: string[] = [];
   public filas: RankingComboFila[] = [];
+  public trabajadoresDisponibles: RankingComboFila[] = [];
   public totales = { combo_programadas: 0, total_he: 0, he_compensables: 0, he_compensables_convertidas: 0 };
   public isLoading = false;
   public errorMessage = '';
@@ -71,6 +72,11 @@ export class RankingCombo implements OnInit, OnDestroy {
         this.totales = response.totales || this.totales;
         this.periodos = response.periodos || [];
         this.departamentos = response.departamentos || [];
+
+        if (!this.trabajador && response.filas) {
+          this.trabajadoresDisponibles = response.filas;
+        }
+
         this.changeDetector.markForCheck();
       },
       error: (error) => {
@@ -84,6 +90,7 @@ export class RankingCombo implements OnInit, OnDestroy {
   public cambiarAnio(valor: number) {
     this.anio = Number(valor);
     this.periodo = '';
+    this.trabajador = '';
     this.cargar();
   }
 

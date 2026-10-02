@@ -13,7 +13,12 @@
         </select>
       </label>
       <label>Trabajador
-        <input [(ngModel)]="trabajador" (ngModelChange)="cargar()" placeholder="PERNR">
+        <select [(ngModel)]="trabajador" (ngModelChange)="cargar()">
+          <option value="">Todos los trabajadores</option>
+          @for (item of trabajadoresDisponibles; track item.pernr) {
+            <option [value]="item.pernr">{{ nombreEmpleado(item) }}</option>
+          }
+        </select>
       </label>
       <label>Año
         <select [ngModel]="anio" (ngModelChange)="cambiarAnio($event)">
