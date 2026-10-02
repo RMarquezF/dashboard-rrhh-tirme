@@ -123,7 +123,18 @@ export class HeService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = 'http://localhost:5000/api/partes';
 
-  obtenerResumen(anio: number, mesDesde: number, mesHasta: number, anioNatural: boolean, filtros: { departamento?: string; trabajador?: string; estado?: string; periodoId?: string } = {}): Observable<HePeriodoResponse> {
+  obtenerResumen(
+    anio: number,
+    mesDesde: number,
+    mesHasta: number,
+    anioNatural: boolean,
+    filtros: {
+      departamento?: string;
+      trabajador?: string;
+      estado?: string;
+      periodoId?: string;
+    } = {},
+  ): Observable<HePeriodoResponse> {
     const params = new HttpParams()
       .set('anio', anio)
       .set('mes_desde', mesDesde)
@@ -137,7 +148,19 @@ export class HeService {
     return this.http.get<HePeriodoResponse>(`${this.apiUrl}/he-por-periodo`, { params });
   }
 
-  obtenerHorasPorEmpleado(anio: number, mesDesde: number, mesHasta: number, anioNatural: boolean, orden: string, filtros: { departamento?: string; trabajador?: string; estado?: string; periodoId?: string } = {}): Observable<HeEmpleadosResponse> {
+  obtenerHorasPorEmpleado(
+    anio: number,
+    mesDesde: number,
+    mesHasta: number,
+    anioNatural: boolean,
+    orden: string,
+    filtros: {
+      departamento?: string;
+      trabajador?: string;
+      estado?: string;
+      periodoId?: string;
+    } = {},
+  ): Observable<HeEmpleadosResponse> {
     const params = new HttpParams()
       .set('anio', anio)
       .set('mes_desde', mesDesde)
@@ -152,12 +175,27 @@ export class HeService {
     return this.http.get<HeEmpleadosResponse>(`${this.apiUrl}/he-por-empleado`, { params });
   }
 
-  obtenerRankingCombo(anio: number, mesDesde: number, mesHasta: number, anioNatural: boolean, filtros: { departamento?: string; trabajador?: string; estado?: string; periodoId?: string } = {}): Observable<RankingComboResponse> {
+  obtenerRankingCombo(
+    anio: number,
+    mesDesde: number,
+    mesHasta: number,
+    anioNatural: boolean,
+    filtros: {
+      departamento?: string;
+      trabajador?: string;
+      estado?: string;
+      periodoId?: string;
+    } = {},
+  ): Observable<RankingComboResponse> {
     const params = new HttpParams()
-      .set('anio', anio).set('mes_desde', mesDesde).set('mes_hasta', mesHasta)
+      .set('anio', anio)
+      .set('mes_desde', mesDesde)
+      .set('mes_hasta', mesHasta)
       .set('anio_natural', anioNatural)
-      .set('departamento', filtros.departamento || '').set('pernr', filtros.trabajador || '')
-      .set('estado', filtros.estado || '').set('periodo_id', filtros.periodoId || '');
+      .set('departamento', filtros.departamento || '')
+      .set('pernr', filtros.trabajador || '')
+      .set('estado', filtros.estado || '')
+      .set('periodo_id', filtros.periodoId || '');
     return this.http.get<RankingComboResponse>(`${this.apiUrl}/ranking-combo`, { params });
   }
 

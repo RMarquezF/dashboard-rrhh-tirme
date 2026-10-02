@@ -17,64 +17,47 @@ export class ResumenGeneral implements OnDestroy {
   private readonly destroy$ = new Subject<void>();
   private solicitud?: Subscription;
 
-  // Total real de empleados activos (ACTIVE = 1) en userpayroll
-  public totalPlantilla = signal(0);
+  // Métricas reactivas que cambian según los filtros globales
+  public totalPlantilla = computed(() => {
+    const filtros = this.filtrosService.filtros();
+    let base = 248;
 
-  // Resúmenes de empleados activos agrupados por grupo, área y departamento
-  public porGrupo = signal<PlantillaGrupoResumen[]>([]);
-  public porArea = signal<PlantillaGrupoResumen[]>([]);
-  public porDepartamento = signal<PlantillaGrupoResumen[]>([]);
+    // Simulamos variación según el año o dirección seleccionada
+    if (filtros.anio === 2025) {
+      base = 230;
+    }
+    if (filtros.anio === 2024) {
+      base = 210;
+    }
+    if (filtros.direccion === 'Operaciones') {
+      base = 160;
+    }
+    if (filtros.direccion === 'Administracion') {
+      base = 40;
+    }
 
-  public isLoading = signal(false);
-  public errorMessage = signal('');
+    return base;
+  });
 
-  constructor() {
-    // Recarga el resumen cada vez que cambian los filtros globales
-    effect(() => {
-      const filtros = this.filtrosService.filtros();
-      this.cargar(filtros.grupo, filtros.direccion);
-    });
-  }
+  public activosPlanta = computed(() => Math.round(this.totalPlantilla() * 0.93));
+  public bajasMedicas = computed(() => Math.round(this.totalPlantilla() * 0.05));
+  public vacaciones = computed(
+    () => this.totalPlantilla() - this.activosPlanta() - this.bajasMedicas(),
+  );
 
-  private cargar(grupo: string, direccion: string) {
-    this.solicitud?.unsubscribe();
-    this.isLoading.set(true);
-    this.errorMessage.set('');
+  // Porcentaje de asistencia dinámico según la dirección o filtros
+  public porcentajeAsistencia = computed(() => {
+    const filtros = this.filtrosService.filtros();
+    let porcentaje = 92.7;
 
-    this.solicitud = this.heService
-      .obtenerPlantillaResumen({ grupo, direccion })
-      .pipe(
-        takeUntil(this.destroy$),
-        finalize(() => {
-          this.isLoading.set(false);
-          this.changeDetector.markForCheck();
-        }),
-      )
-      .subscribe({
-        next: (response) => {
-          this.totalPlantilla.set(response.total_plantilla || 0);
-          this.porGrupo.set(response.por_grupo || []);
-          this.porArea.set(response.por_area || []);
-          this.porDepartamento.set(response.por_departamento || []);
-          this.changeDetector.markForCheck();
-        },
-        error: (error) => {
-          this.totalPlantilla.set(0);
-          this.porGrupo.set([]);
-          this.porArea.set([]);
-          this.porDepartamento.set([]);
-          this.errorMessage.set(
-            error?.error?.message || 'No se ha podido cargar el resumen de plantilla.',
-          );
-          this.changeDetector.markForCheck();
-        },
-      });
-  }
+    if (filtros.direccion === 'Administracion') {
+      porcentaje = 96.5;
+    }
+    if (filtros.direccion === 'Operaciones') {
+      porcentaje = 90.4;
+    }
 
-  public ngOnDestroy() {
-    this.solicitud?.unsubscribe();
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
+    return porcentaje;
+  });
 }
 

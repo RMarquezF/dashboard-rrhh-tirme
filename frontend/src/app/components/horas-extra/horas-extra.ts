@@ -2,7 +2,13 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { finalize, Subject, Subscription, takeUntil } from 'rxjs';
-import { HeDepartamento, HeEstado, HeMensual, HePeriodo, HeService, HeTrabajador } from '../../services/he.service';
+import {
+  HeDepartamento,
+  HeMensual,
+  HePeriodo,
+  HeService,
+  HeTrabajador,
+} from '../../services/he.service';
 
 @Component({
   selector: 'app-horas-extra',
@@ -34,17 +40,39 @@ export class HorasExtra implements OnInit, OnDestroy {
   public errorMessage = '';
   public readonly meses = Array.from({ length: 12 }, (_, index) => index + 1);
   public readonly coloresDepartamentos = [
-    '#0f4c5c', '#e76f51', '#2a9d8f', '#f4a261',
-    '#264653', '#e9c46a', '#6a994e', '#bc4749',
-    '#457b9d', '#8d5a97', '#d1495b', '#00798c',
-    '#edae49', '#30638e', '#758e4f', '#9c6644',
+    '#0f4c5c',
+    '#e76f51',
+    '#2a9d8f',
+    '#f4a261',
+    '#264653',
+    '#e9c46a',
+    '#6a994e',
+    '#bc4749',
+    '#457b9d',
+    '#8d5a97',
+    '#d1495b',
+    '#00798c',
+    '#edae49',
+    '#30638e',
+    '#758e4f',
+    '#9c6644',
   ];
   private readonly destroy$ = new Subject<void>();
   private solicitudResumen?: Subscription;
 
   private readonly nombresMeses = [
-    'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
-    'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic',
+    'Ene',
+    'Feb',
+    'Mar',
+    'Abr',
+    'May',
+    'Jun',
+    'Jul',
+    'Ago',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dic',
   ];
 
   public ngOnInit() {
@@ -72,12 +100,13 @@ export class HorasExtra implements OnInit, OnDestroy {
     this.isLoading = true;
     this.errorMessage = '';
 
-    this.heService.obtenerResumen(this.anio, this.mesDesde, this.mesHasta, this.anioNatural, {
-      departamento: this.departamento,
-      trabajador: this.trabajador,
-      estado: this.estado,
-      periodoId: this.periodo,
-    })
+    this.heService
+      .obtenerResumen(this.anio, this.mesDesde, this.mesHasta, this.anioNatural, {
+        departamento: this.departamento,
+        trabajador: this.trabajador,
+        estado: this.estado,
+        periodoId: this.periodo,
+      })
       .pipe(
         takeUntil(this.destroy$),
         finalize(() => {
@@ -91,7 +120,11 @@ export class HorasExtra implements OnInit, OnDestroy {
           this.departamentos = this.normalizarDepartamentos(response?.departamentos);
           this.trabajadores = this.normalizarTrabajadores(response?.trabajadores);
           this.periodos = response?.periodos || [];
-          this.departamentosDisponibles = [...new Set(this.departamentos.map((item) => item.departamento).filter(Boolean) as string[])];
+          this.departamentosDisponibles = [
+            ...new Set(
+              this.departamentos.map((item) => item.departamento).filter(Boolean) as string[],
+            ),
+          ];
           this.trabajadoresDisponibles = this.trabajadores;
           this.changeDetector.markForCheck();
         },
@@ -99,7 +132,8 @@ export class HorasExtra implements OnInit, OnDestroy {
           this.mensual = [];
           this.departamentos = [];
           this.trabajadores = [];
-          this.errorMessage = error?.error?.message || 'No se ha podido cargar el resumen de horas extra.';
+          this.errorMessage =
+            error?.error?.message || 'No se ha podido cargar el resumen de horas extra.';
           this.changeDetector.markForCheck();
         },
       });
@@ -203,7 +237,10 @@ export class HorasExtra implements OnInit, OnDestroy {
   }
 
   public totalDepartamentos() {
-    return Math.max(this.departamentos.reduce((total, item) => total + this.normalizarNumero(item.total), 0), 1);
+    return Math.max(
+      this.departamentos.reduce((total, item) => total + this.normalizarNumero(item.total), 0),
+      1,
+    );
   }
 
   public porcentaje(valor: number, maximo: number) {
@@ -229,7 +266,9 @@ export class HorasExtra implements OnInit, OnDestroy {
   }
 
   public topTrabajadores() {
-    return [...this.trabajadores].sort((a, b) => this.normalizarNumero(b.normales) - this.normalizarNumero(a.normales));
+    return [...this.trabajadores].sort(
+      (a, b) => this.normalizarNumero(b.normales) - this.normalizarNumero(a.normales),
+    );
   }
 
   public segmentoCirculo(valor: number, total: number) {

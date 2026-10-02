@@ -152,7 +152,6 @@ def get_he_por_periodo():
         'trabajadores': [row._asdict() for row in trabajadores],
     }), 200
 
-
 @partes_bp.route('/he-por-empleado', methods=['GET'])
 def get_he_por_empleado():
     anio = request.args.get('anio', '2026', type=str)
@@ -200,8 +199,11 @@ def get_he_por_empleado():
      .filter(*filtros) \
      .group_by(ZParte.PERNR, UserPayroll.NAME, UserPayroll.SURNAME)
 
+    # Criterios de ordenación actualizados
     if orden == 'pernr':
         query = query.order_by(ZParte.PERNR.asc())
+    elif orden == 'trabajador':
+        query = query.order_by(UserPayroll.NAME.asc(), UserPayroll.SURNAME.asc())
     else:
         query = query.order_by(horas.desc(), ZParte.PERNR.asc())
 
@@ -220,7 +222,7 @@ def get_he_por_empleado():
     return jsonify({
         'anio': anio,
         'periodo_id': periodo_id,
-        'orden': 'pernr' if orden == 'pernr' else 'horas',
+        'orden': orden,
         'empleados': [
             {
                 'pernr': row.pernr,

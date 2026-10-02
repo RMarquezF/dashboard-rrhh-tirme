@@ -2,9 +2,67 @@
   class="bg-[#0d2f38] border-b border-[#1c4a52] px-6 py-4 flex flex-col lg:flex-row items-center justify-between shadow-[0_2px_12px_rgba(0,0,0,0.18)] gap-4"
 >
   <div class="flex-1 min-w-0">
-    <h2 class="text-[1.7rem] font-black tracking-[-0.03em] text-white leading-tight">Reporte Gestión RRHH</h2>
-    <p class="text-[11px] text-[#b6dbd9] uppercase tracking-[0.12em] font-semibold mt-1">Filtros globales del cuadro de mando</p>
+    <h2 class="text-[1.7rem] font-black tracking-[-0.03em] text-white leading-tight">
+      Reporte Gestión RRHH
+    </h2>
+    <p class="text-[11px] text-[#b6dbd9] uppercase tracking-[0.12em] font-semibold mt-1">
+      Filtros globales del cuadro de mando
+    </p>
   </div>
 
-  
+  <div class="flex flex-wrap items-end gap-3 w-full lg:w-auto justify-end">
+    <div class="flex flex-col">
+      <label class="text-[10px] font-bold text-[#cfe4e6] uppercase tracking-[0.12em] mb-1"
+        >Dirección</label
+      >
+      <select
+        (change)="onDireccionChange($event)"
+        class="bg-[#123b43] border border-[#2d5d66] text-white text-xs rounded-lg focus:ring-[#2ec4b6] focus:border-[#2ec4b6] block px-3 py-2 min-w-[170px] shadow-sm"
+      >
+        <option value="">Todas las Direcciones</option>
+        <option value="Operaciones">Operaciones</option>
+        <option value="Administración">Administración</option>
+        <option value="Planta">Planta</option>
+      </select>
+    </div>
+
+    <div class="flex flex-col">
+      <label class="text-[10px] font-bold text-[#cfe4e6] uppercase tracking-[0.12em] mb-1"
+        >Grupo Partes</label
+      >
+      <select
+        (change)="onGrupoChange($event)"
+        class="bg-[#123b43] border border-[#2d5d66] text-white text-xs rounded-lg focus:ring-[#2ec4b6] focus:border-[#2ec4b6] block px-3 py-2 min-w-[170px] shadow-sm"
+      >
+        <option value="">Todos los Grupos</option>
+        <option value="Turno A">Turno A</option>
+        <option value="Turno B">Turno B</option>
+        <option value="Oficinas">Oficinas</option>
+      </select>
+    </div>
+
+    <div class="flex flex-col">
+      <label class="text-[10px] font-bold text-[#cfe4e6] uppercase tracking-[0.12em] mb-1"
+        >Desde</label
+      >
+      <input
+        type="date"
+        [ngModel]="filtrosService.filtros().fechaDesde"
+        (ngModelChange)="onFechaChange('fechaDesde', $event)"
+        class="bg-[#123b43] border border-[#2d5d66] text-white text-xs rounded-lg focus:ring-[#2ec4b6] focus:border-[#2ec4b6] block px-3 py-2 min-w-[150px] shadow-sm"
+      />
+    </div>
+
+    <div class="flex flex-col">
+      <label class="text-[10px] font-bold text-[#cfe4e6] uppercase tracking-[0.12em] mb-1"
+        >Hasta</label
+      >
+      <input
+        type="date"
+        [ngModel]="filtrosService.filtros().fechaHasta"
+        (ngModelChange)="onFechaChange('fechaHasta', $event)"
+        class="bg-[#123b43] border border-[#2d5d66] text-white text-xs rounded-lg focus:ring-[#2ec4b6] focus:border-[#2ec4b6] block px-3 py-2 min-w-[150px] shadow-sm"
+      />
+    </div>
+  </div>
 </header>
