@@ -39,6 +39,7 @@ export class RankingCombo implements OnInit, OnDestroy {
   ];
 
   public periodos: HePeriodo[] = [];
+  public estados: HeEstado[] = [{ valor: '', etiqueta: 'Todos' }];
   public departamentos: string[] = [];
   public filas: RankingComboFila[] = [];
   public trabajadoresDisponibles: RankingComboFila[] = [];

@@ -32,12 +32,7 @@ export class HorasExtra implements OnInit, OnDestroy {
   public departamentosDisponibles: string[] = [];
   public trabajadoresDisponibles: HeTrabajador[] = [];
   public periodos: HePeriodo[] = [];
-  public readonly estados = [
-    { valor: '', etiqueta: 'Todos los estados' },
-    { valor: 'P', etiqueta: 'Pendiente' },
-    { valor: 'V', etiqueta: 'Validado' },
-    { valor: 'T', etiqueta: 'Traspasado a nómina' },
-  ];
+  public estados: HeEstado[] = [{ valor: '', etiqueta: 'Todos los estados' }];
   public mensual: HeMensual[] = [];
   public departamentos: HeDepartamento[] = [];
   public trabajadores: HeTrabajador[] = [];
@@ -81,7 +76,23 @@ export class HorasExtra implements OnInit, OnDestroy {
   ];
 
   public ngOnInit() {
+    this.cargarEstados();
     this.cargarResumen();
+  }
+
+  private cargarEstados() {
+    this.heService
+      .obtenerEstados()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (estados) => {
+          this.estados = [{ valor: '', etiqueta: 'Todos los estados' }, ...(estados || [])];
+          this.changeDetector.markForCheck();
+        },
+        error: () => {
+          // Si falla, se mantiene la opción por defecto
+        },
+      });
   }
 
   public cargarResumen() {

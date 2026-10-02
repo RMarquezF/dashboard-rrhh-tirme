@@ -26,6 +26,14 @@ export class HorasExtraEmpleados implements OnInit, OnDestroy {
   public estado = '';
   public periodo = '';
   public orden = 'horas';
+
+  public readonly estados = [
+    { valor: '', etiqueta: 'Todos los estados' },
+    { valor: 'P', etiqueta: 'Pendiente' },
+    { valor: 'V', etiqueta: 'Validado' },
+    { valor: 'T', etiqueta: 'Traspasado a nómina' },
+  ];
+
   public empleados: HeEmpleado[] = [];
   public trabajadoresDisponibles: HeEmpleado[] = [];
   public departamentos: string[] = [];

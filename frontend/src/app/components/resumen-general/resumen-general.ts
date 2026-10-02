@@ -1,6 +1,8 @@
-import { Component, inject, computed } from '@angular/core';
+import { Component, ChangeDetectorRef, OnDestroy, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { finalize, Subject, Subscription, takeUntil } from 'rxjs';
 import { FiltrosService } from '../../services/filtros';
+import { HeService, PlantillaGrupoResumen } from '../../services/he.service';
 
 @Component({
   selector: 'app-resumen-general',
@@ -8,8 +10,12 @@ import { FiltrosService } from '../../services/filtros';
   imports: [CommonModule],
   templateUrl: './resumen-general.html',
 })
-export class ResumenGeneral {
+export class ResumenGeneral implements OnDestroy {
   public filtrosService = inject(FiltrosService);
+  private readonly heService = inject(HeService);
+  private readonly changeDetector = inject(ChangeDetectorRef);
+  private readonly destroy$ = new Subject<void>();
+  private solicitud?: Subscription;
 
   // Métricas reactivas que cambian según los filtros globales
   public totalPlantilla = computed(() => {
@@ -54,3 +60,4 @@ export class ResumenGeneral {
     return porcentaje;
   });
 }
+

@@ -17,8 +17,7 @@
           }
         </select>
       </label>
-      <label
-        >Trabajador
+      <label>Trabajador
         <select [(ngModel)]="trabajador" (ngModelChange)="cargar()">
           <option value="">Todos los trabajadores</option>
           @for (item of trabajadoresDisponibles; track item.pernr) {
